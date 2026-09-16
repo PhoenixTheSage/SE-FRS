@@ -9,7 +9,7 @@ Settings live in the Pulsar plugin dialog. When [Anomaly Shader Framework](https
 ## Requirements
 
 - Space Engineers with [Pulsar](https://github.com/SpaceGT/Pulsar) 2.4.0 or later, Windows, Direct3D feature level 11_0 (NVIDIA, AMD, or Intel — not WARP)
-- Native `amd_frs.dll` from `Native\build.bat` (writes `Assets/amd_frs.dll`, gitignored). A local deploy copies it next to the plugin in Pulsar `Local`. Do **not** list a GitHub `<Asset>` URL until that release exists — Pulsar treats a 404 as **Network!** and skips the plugin.
+- Native `amd_frs.dll` from `Native\build.bat` (writes `Assets/amd_frs.dll`, gitignored). Pulsar downloads the published [amd-frs-2.2.1](https://github.com/PhoenixTheSage/SE-FRS/releases/tag/amd-frs-2.2.1) release into Bin from `SpaceEngineersFRS.xml`. A local deploy also copies it next to the plugin in Pulsar `Local`. A 404 on that Asset URL shows as **Network!** and skips the plugin.
 
 ## Settings
 

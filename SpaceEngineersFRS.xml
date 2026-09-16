@@ -19,9 +19,10 @@ Compat: Certain rendering mods may not play nice until they use Anomaly.
         <Directory>ClientPlugin</Directory>
     </SourceDirectories>
 
-    <!-- No GitHub Asset until amd_frs.dll is published. Pulsar treats a 404 as
-         Network! and refuses to load the plugin. Local -Sources uses Assets/amd_frs.dll
-         copied to Pulsar Legacy\Local by Native\build.bat + ClientPlugin deploy. -->
+    <Asset Name="AmdFrs"
+           Url="https://github.com/PhoenixTheSage/SE-FRS/releases/download/amd-frs-2.2.1/amd_frs.dll"
+           Sha256="1e930d82fbb7dfe9590078b63bb1bd20537aef31225873cef88653c6a75031ff"
+           Placement="Bin" />
 
     <Platforms>Windows</Platforms>
 
