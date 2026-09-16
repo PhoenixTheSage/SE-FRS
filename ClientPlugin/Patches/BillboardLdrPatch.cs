@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using ClientPlugin.Dlss;
+using ClientPlugin.Frs;
 using HarmonyLib;
 using Sandbox.Game.World;
 using SharpDX.Direct3D11;
@@ -86,7 +86,7 @@ internal static class BillboardOutputPass
         // Master FinishDraw: ApplyActionOnPersistentBillboards(Action) after
         // Parallel.For writes persistents. That call is session-thread and
         // often has empty PendingAdds (in-place HUD, not AddBillboard clones).
-        if (!DlssRuntime.IsLive || _publishing)
+        if (!FrsRuntime.IsLive || _publishing)
             return;
         if (IsRenderThread())
             return;
@@ -152,7 +152,7 @@ internal static class BillboardOutputPass
 
     public static void NoteAdd(MyBillboard billboard)
     {
-        if (!DlssRuntime.IsLive || !IsPostPp(billboard))
+        if (!FrsRuntime.IsLive || !IsPostPp(billboard))
             return;
         lock (SnapshotLock)
         {
@@ -163,7 +163,7 @@ internal static class BillboardOutputPass
 
     public static void NoteAdds(IEnumerable<MyBillboard> billboards)
     {
-        if (!DlssRuntime.IsLive || billboards == null)
+        if (!FrsRuntime.IsLive || billboards == null)
             return;
         lock (SnapshotLock)
         {
@@ -182,12 +182,12 @@ internal static class BillboardOutputPass
 
     public static bool TryRenderPostPp(MyRenderContext rc, IRtvBindable target)
     {
-        LogHudOnce("RenderPostPP enter live=" + DlssRuntime.IsLive +
+        LogHudOnce("RenderPostPP enter live=" + FrsRuntime.IsLive +
                    " target=" + (target != null ? target.Size.ToString() : "null") +
                    " pending=" + PendingCount() +
-                   " yieldPresent=" + DlssRuntime.ShouldYieldPresentPath +
+                   " yieldPresent=" + FrsRuntime.ShouldYieldPresentPath +
                    " " + DescribeBuckets());
-        if (!DlssRuntime.IsLive)
+        if (!FrsRuntime.IsLive)
             return false;
 
         // Keen binds internal GBuffer depth as DSV against an output-sized
@@ -198,7 +198,7 @@ internal static class BillboardOutputPass
 
     public static void TryDrawOnSceneDest(ISrvBindable source, string reason)
     {
-        if (!DlssRuntime.IsLive || source == null)
+        if (!FrsRuntime.IsLive || source == null)
             return;
         if (_drewHudThisScene && PublishedCount() <= _drewHudCount)
             return;
@@ -211,7 +211,7 @@ internal static class BillboardOutputPass
 
     public static void TryDrawAfterSceneBlit()
     {
-        if (!DlssRuntime.IsLive)
+        if (!FrsRuntime.IsLive)
             return;
         if (_drewHudThisScene && PublishedCount() <= _drewHudCount)
             return;
@@ -219,8 +219,8 @@ internal static class BillboardOutputPass
         var rc = MyRender11.RC;
         if (dest == null || rc == null)
             return;
-        DlssRuntime.RestoreViewportToOutput();
-        var viewport = DlssRuntime.OutputPixelSize();
+        FrsRuntime.RestoreViewportToOutput();
+        var viewport = FrsRuntime.OutputPixelSize();
         if (viewport.X <= 0 || viewport.Y <= 0)
             return;
         TryDrawOnto(rc, dest, viewport, "present");
@@ -237,7 +237,7 @@ internal static class BillboardOutputPass
         if (_drewHudThisScene && PublishedCount() <= _drewHudCount)
             return true;
 
-        DlssRuntime.BindUnjitteredHudConstants();
+        FrsRuntime.BindUnjitteredHudConstants();
         if (!EnsurePostPpBatches(rc))
         {
             LogHudOnce(reason + " no PostPP bucket dest=" + dest.Size + " " + DescribeBuckets());
@@ -317,7 +317,7 @@ internal static class BillboardOutputPass
 
     static Vector2I HudViewport(IRtvBindable dest)
     {
-        var output = DlssRuntime.OutputPixelSize();
+        var output = FrsRuntime.OutputPixelSize();
         if (output.X <= 0 || output.Y <= 0)
             return dest != null ? dest.Size : default;
         if (dest != null && dest.Size.X == output.X && dest.Size.Y == output.Y)
@@ -432,7 +432,7 @@ internal static class BillboardOutputPass
 
     public static bool TryRender(MyRenderContext rc, ISrvBindable depthRead, IRtvBindable target, int bucket)
     {
-        if (!DlssRuntime.IsLive || rc == null || target == null)
+        if (!FrsRuntime.IsLive || rc == null || target == null)
             return false;
         var sceneDepth = MyGBuffer.Main?.ResolvedDepthStencil;
         if (sceneDepth == null || (target.Size.X == sceneDepth.Size.X && target.Size.Y == sceneDepth.Size.Y))
@@ -443,7 +443,7 @@ internal static class BillboardOutputPass
         rc.SetViewport(0f, 0f, target.Size.X, target.Size.Y);
         rc.SetBlendState(MyBlendStateManager.BlendAlphaPremult);
 
-        var outputDepth = DlssRuntime.TryAcquireOutputDepth(sceneDepth, target.Size);
+        var outputDepth = FrsRuntime.TryAcquireOutputDepth(sceneDepth, target.Size);
         if (outputDepth != null)
         {
             DebugLog.WriteFrame("Billboard LDR upsampled depth dest=" + target.Size + " src=" + sceneDepth.Size);
@@ -751,8 +751,8 @@ internal static class BillboardOutputPass
             }
         }
 
-        return "eval=" + DlssRuntime.EvaluatedThisFrame +
-               " live=" + DlssRuntime.IsLive +
+        return "eval=" + FrsRuntime.EvaluatedThisFrame +
+               " live=" + FrsRuntime.IsLive +
                " snapshot=" + Snapshot.Count +
                " published=" + PublishedCount() +
                " bucketCounts=" + counts +

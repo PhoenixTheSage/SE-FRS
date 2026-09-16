@@ -1,6 +1,6 @@
 using System;
 using System.Reflection;
-using ClientPlugin.Dlss;
+using ClientPlugin.Frs;
 using HarmonyLib;
 using Sandbox;
 using VRage.Game.Utils;
@@ -25,9 +25,9 @@ internal static class UpdateScreenSizePatch
 
     internal static bool TryForceOutput(ref int width, ref int height, ref MyViewport viewport)
     {
-        if (!DlssRuntime.WantsDlss)
+        if (!FrsRuntime.WantsFrs)
             return false;
-        var output = DlssRuntime.OutputResolution();
+        var output = FrsRuntime.OutputResolution();
         if (output.X <= 0 || output.Y <= 0)
             return false;
         if (width == output.X && height == output.Y)
@@ -45,10 +45,10 @@ internal static class CameraUpdateScreenSizePatch
     [HarmonyPrefix]
     private static void Prefix(ref MyViewport currentScreenViewport)
     {
-        if (!DlssRuntime.WantsDlss)
+        if (!FrsRuntime.WantsFrs)
             return;
 
-        var output = DlssRuntime.OutputResolution();
+        var output = FrsRuntime.OutputResolution();
         if (output.X <= 0 || output.Y <= 0)
             return;
 
@@ -67,9 +67,9 @@ internal static class CameraUpdateViewportPatch
 
     internal static void ForceViewport(MyCamera camera)
     {
-        if (camera == null || !DlssRuntime.WantsDlss)
+        if (camera == null || !FrsRuntime.WantsFrs)
             return;
-        var output = DlssRuntime.OutputResolution();
+        var output = FrsRuntime.OutputResolution();
         if (output.X <= 0 || output.Y <= 0)
             return;
         if ((int)camera.Viewport.Width == output.X && (int)camera.Viewport.Height == output.Y)
@@ -94,9 +94,9 @@ internal static class CameraViewportSizePatch
     [HarmonyPostfix]
     private static void Postfix(ref Vector2 __result)
     {
-        if (!DlssRuntime.WantsDlss)
+        if (!FrsRuntime.WantsFrs)
             return;
-        var output = DlssRuntime.OutputResolution();
+        var output = FrsRuntime.OutputResolution();
         if (output.X <= 0 || output.Y <= 0)
             return;
         if ((int)__result.X == output.X && (int)__result.Y == output.Y)

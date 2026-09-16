@@ -1,4 +1,4 @@
-using ClientPlugin.Dlss;
+using ClientPlugin.Frs;
 using HarmonyLib;
 using VRageRender;
 
@@ -10,7 +10,7 @@ internal static class GBufferPassBeginPatch
     [HarmonyPrefix]
     private static void Prefix(MyGBufferPass __instance)
     {
-        if (!DlssRuntime.IsLive)
+        if (!FrsRuntime.IsLive)
             return;
         var env = MyRender11.Environment;
         if (env == null)

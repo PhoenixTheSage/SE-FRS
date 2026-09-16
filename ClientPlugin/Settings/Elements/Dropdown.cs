@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using ClientPlugin.Dlss;
+using ClientPlugin.Frs;
 using Sandbox.Graphics.GUI;
 
 namespace ClientPlugin.Settings.Elements;
@@ -40,8 +40,8 @@ internal class DropdownAttribute(
         for (var i = 0; i < elements.Length; i++)
         {
             if (choiceEnum == typeof(AntiAliasingChoice) &&
-                (AntiAliasingChoice)i == AntiAliasingChoice.DLSS &&
-                !GpuSupport.CanOfferDlss)
+                (AntiAliasingChoice)i == AntiAliasingChoice.FRS &&
+                !GpuSupport.CanOfferFrs)
                 continue;
             dropdown.AddItem(i, UnCamelCase(elements[i]));
         }

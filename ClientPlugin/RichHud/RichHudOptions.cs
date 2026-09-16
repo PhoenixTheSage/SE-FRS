@@ -1,4 +1,4 @@
-using ClientPlugin.Dlss;
+using ClientPlugin.Frs;
 using ClientPlugin.Settings;
 
 namespace ClientPlugin.RichHud;
@@ -16,19 +16,11 @@ internal static class RichHudOptions
         Save();
     }
 
-    public static DlssMode GetMode() => Config.Current.Mode;
+    public static FrsMode GetMode() => Config.Current.Mode;
 
-    public static void SetMode(DlssMode value)
+    public static void SetMode(FrsMode value)
     {
         Config.Current.Mode = value;
-        Save();
-    }
-
-    public static DlssModel GetModel() => Config.Current.Model;
-
-    public static void SetModel(DlssModel value)
-    {
-        Config.Current.Model = value;
         Save();
     }
 

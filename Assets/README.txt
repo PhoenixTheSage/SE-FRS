@@ -1,12 +1,9 @@
-Pulsar 2.4.0+ downloads nvngx_dlss.dll from the GitHub release named in
-SpaceEngineersDLSS.xml (Url + Sha256, Placement=Bin) and calls
-Plugin.LoadAssets with the resolved file path.
+Local builds: run Native\build.bat (writes amd_frs.dll here). ClientPlugin
+deploy copies it next to the plugin in Pulsar Legacy\Local / Interim\Local.
 
-- nvngx_dlss.dll
-  NVIDIA DLSS Super Resolution redistributable (NVIDIA/DLSS SDK 310.7.0,
-  lib/Windows_x86_64/rel/). Not committed to git. For a local build, drop
-  the release asset here or next to the plugin DLL. After replacing the
-  file, update the NvngxDlss Sha256 (and release tag) in SpaceEngineersDLSS.xml.
+Do not add a GitHub <Asset> in SpaceEngineersFRS.xml until that release
+exists. Pulsar downloads URL assets before loading a local folder plugin;
+a 404 shows as Network! and the plugin never starts.
 
-- NVIDIA-LICENSE.txt
-  NVIDIA RTX SDKs license shipped next to the redistributable.
+- amd_frs.dll
+  Native FSR 2.2.1 DX11 host. Not committed to git.

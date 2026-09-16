@@ -1,5 +1,5 @@
 using System;
-using ClientPlugin.Dlss;
+using ClientPlugin.Frs;
 using HarmonyLib;
 using VRage.Render11.Resources;
 using VRage.Utils;
@@ -13,35 +13,35 @@ internal static class ToneMappingPatch
     private static bool _exceptionLogged;
 
     // Skip Keen SDR (and HdrRender's scRGB prefix result) when HDR
-    // evaluate is required. Same gate as NGX IsHDR create flags.
+    // evaluate is required. Same gate as FRS IsHDR create flags.
     [HarmonyPrefix]
     [HarmonyPriority(Priority.First)]
     private static bool Prefix(ref IBorrowedCustomTexture __result)
     {
-        if (!DlssRuntime.IsLive || !DlssRuntime.WantsHdrEvaluate)
+        if (!FrsRuntime.IsLive || !FrsRuntime.WantsHdrEvaluate)
             return true;
-        if (DlssRuntime.EvaluatedThisFrame)
+        if (FrsRuntime.EvaluatedThisFrame)
         {
-            __result = DlssRuntime.AcquireHdrOutput();
+            __result = FrsRuntime.AcquireHdrOutput();
             return false;
         }
         try
         {
-            if (!DlssRuntime.TryEvaluateHdrDisplay())
+            if (!FrsRuntime.TryEvaluateHdrDisplay())
             {
                 // Do not run Keen's SDR operator onto an scRGB dest — that
                 // clips peaks and is what Show Status reported as LDR.
                 DebugLog.Write("ToneMapping skip Keen SDR after HDR evaluate miss");
-                __result = DlssRuntime.AcquireHdrOutput();
+                __result = FrsRuntime.AcquireHdrOutput();
                 return false;
             }
-            __result = DlssRuntime.AcquireHdrOutput();
+            __result = FrsRuntime.AcquireHdrOutput();
             return false;
         }
         catch (Exception e)
         {
             LogOnce(e);
-            __result = DlssRuntime.AcquireHdrOutput();
+            __result = FrsRuntime.AcquireHdrOutput();
             return false;
         }
     }
@@ -52,31 +52,31 @@ internal static class ToneMappingPatch
     [HarmonyPriority(Priority.Low)]
     private static void Postfix(ref IBorrowedCustomTexture __result)
     {
-        if (!DlssRuntime.IsLive || DlssRuntime.EvaluatedThisFrame || __result == null)
+        if (!FrsRuntime.IsLive || FrsRuntime.EvaluatedThisFrame || __result == null)
             return;
-        if (DlssRuntime.WantsHdrEvaluate)
+        if (FrsRuntime.WantsHdrEvaluate)
             return;
-        if (__result.Size.X != DlssRuntime.InternalWidth || __result.Size.Y != DlssRuntime.InternalHeight)
+        if (__result.Size.X != FrsRuntime.InternalWidth || __result.Size.Y != FrsRuntime.InternalHeight)
             return;
 
         try
         {
-            var dest = DlssRuntime.AcquireLdrOutput();
+            var dest = FrsRuntime.AcquireLdrOutput();
             if (dest == null)
                 return;
 
-            if (!DlssRuntime.TryEvaluate(dest, __result))
+            if (!FrsRuntime.TryEvaluate(dest, __result))
             {
                 DebugLog.Write("ToneMapping LDR evaluate failed src=" + __result.Size +
                                " dest=" + dest.Size);
                 return;
             }
 
-            DlssRuntime.NoteLdrEvaluate(dest, __result);
+            FrsRuntime.NoteLdrEvaluate(dest, __result);
             __result.Release();
             __result = dest;
-            DlssRuntime.EvaluatedThisFrame = true;
-            DlssRuntime.ApplyOutputSpace();
+            FrsRuntime.EvaluatedThisFrame = true;
+            FrsRuntime.ApplyOutputSpace();
             try
             {
                 AnomalyHook.NotifyUpscaleComplete(MyRender11.RC, dest);
@@ -86,8 +86,8 @@ internal static class ToneMappingPatch
                 MyRender11.RC?.ClearState();
             }
 
-            DebugLog.WriteFrame("ToneMapping LDR evaluate src=" + DlssRuntime.InternalWidth + "x" +
-                                DlssRuntime.InternalHeight + " dest=" + dest.Size);
+            DebugLog.WriteFrame("ToneMapping LDR evaluate src=" + FrsRuntime.InternalWidth + "x" +
+                                FrsRuntime.InternalHeight + " dest=" + dest.Size);
         }
         catch (Exception e)
         {
@@ -101,7 +101,7 @@ internal static class ToneMappingPatch
         if (!_exceptionLogged)
         {
             _exceptionLogged = true;
-            MyLog.Default.Warning("DLSS tone-mapping patch failed: " + message);
+            MyLog.Default.Warning("FRS tone-mapping patch failed: " + message);
         }
         DebugLog.Write("ToneMapping threw " + e);
     }

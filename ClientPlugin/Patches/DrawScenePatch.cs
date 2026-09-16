@@ -1,5 +1,5 @@
 using System;
-using ClientPlugin.Dlss;
+using ClientPlugin.Frs;
 using HarmonyLib;
 using VRageRender;
 
@@ -13,21 +13,21 @@ internal static class DrawScenePatch
     {
         try
         {
-            if (!DlssRuntime.WantsDlss || !DlssRuntime.TryPrepareFrame())
+            if (!FrsRuntime.WantsFrs || !FrsRuntime.TryPrepareFrame())
             {
-                DlssRuntime.RestoreOutputResolution();
+                FrsRuntime.RestoreOutputResolution();
                 return;
             }
 
             BillboardOutputPass.BeginDraw();
-            DebugLog.WriteFrame("DrawScene internal " + DlssRuntime.InternalWidth + "x" + DlssRuntime.InternalHeight);
-            DlssRuntime.ApplyInternalResolution();
-            DlssRuntime.PinViewportToInternal();
+            DebugLog.WriteFrame("DrawScene internal " + FrsRuntime.InternalWidth + "x" + FrsRuntime.InternalHeight);
+            FrsRuntime.ApplyInternalResolution();
+            FrsRuntime.PinViewportToInternal();
         }
         catch (Exception e)
         {
             DebugLog.Write("DrawScene prefix: " + e.GetType().Name + ": " + e.Message);
-            DlssRuntime.RestoreOutputResolution();
+            FrsRuntime.RestoreOutputResolution();
         }
     }
 
@@ -37,10 +37,10 @@ internal static class DrawScenePatch
         var env = MyRender11.Environment;
         if (env != null)
             Jitter.Restore(env.Matrices);
-        if (!DlssRuntime.IsLive)
+        if (!FrsRuntime.IsLive)
             return;
-        DlssRuntime.BindUnjitteredHudConstants();
-        var output = DlssRuntime.OutputPixelSize();
+        FrsRuntime.BindUnjitteredHudConstants();
+        var output = FrsRuntime.OutputPixelSize();
         var rc = MyRender11.RC;
         if (rc != null && output.X > 0 && output.Y > 0)
             rc.SetViewport(0f, 0f, output.X, output.Y);

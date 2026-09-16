@@ -1,4 +1,4 @@
-using ClientPlugin.Dlss;
+using ClientPlugin.Frs;
 using HarmonyLib;
 using VRage;
 using VRageRender;
@@ -11,11 +11,11 @@ internal static class ApplySettingsPatch
     [HarmonyPrefix]
     private static bool Prefix(MyRenderDeviceSettings settings)
     {
-        if (!DlssRuntime.IsLive)
+        if (!FrsRuntime.IsLive)
             return true;
-        if (!DlssRuntime.SettingsMatchOutput(settings.BackBufferWidth, settings.BackBufferHeight))
+        if (!FrsRuntime.SettingsMatchOutput(settings.BackBufferWidth, settings.BackBufferHeight))
             return true;
-        if (!DlssRuntime.SwapchainMatchesOutput())
+        if (!FrsRuntime.SwapchainMatchesOutput())
             return true;
 
         // Backbuffer.Size follows internal ResolutionI; the swapchain is already output-sized.

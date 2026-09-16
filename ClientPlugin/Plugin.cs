@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using ClientPlugin.Dlss;
+using ClientPlugin.Frs;
 using ClientPlugin.Patches;
 using ClientPlugin.RichHud;
 using ClientPlugin.Settings;
@@ -21,7 +22,7 @@ namespace ClientPlugin;
 // ReSharper disable once UnusedType.Global
 public sealed class Plugin : IPlugin
 {
-    public const string Name = "SpaceEngineersDLSS";
+    public const string Name = "SpaceEngineersFRS";
     public static Plugin Instance { get; private set; }
 
     private SettingsGenerator settingsGenerator;
@@ -36,18 +37,12 @@ public sealed class Plugin : IPlugin
         Instance = this;
         settingsGenerator = new SettingsGenerator();
         DebugLog.Open();
-        NgxHost.AddSearchPath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
-        DebugLog.Write("Init search=" + NgxHost.SearchPathSummary());
+        AddDefaultSearchPaths();
+        DebugLog.Write("Init search=" + FrsHost.SearchPathSummary());
 
         GpuSupport.TryProbe();
         AnomalyHook.Probe();
         AnomalyTerminalHook.TryInstall();
-        if (GpuSupport.Probed && !GpuSupport.IsNvidia)
-        {
-            MyLog.Default.WriteLine("DLSS plugin initialized without Harmony patches. GPU: " + GpuSupport.StatusLine);
-            DebugLog.Write("Harmony skipped, non-NVIDIA GPU=" + GpuSupport.StatusLine);
-            return;
-        }
 
         harmony = new Harmony(Name);
         harmony.PatchAll(Assembly.GetExecutingAssembly());
@@ -56,7 +51,7 @@ public sealed class Plugin : IPlugin
         AnomalyHook.Probe();
         AnomalyHook.ClaimUpscale();
         AnomalyTerminalHook.TryInstall();
-        MyLog.Default.WriteLine("DLSS plugin initialized. GPU: " + GpuSupport.StatusLine);
+        MyLog.Default.WriteLine("FRS plugin initialized. GPU: " + GpuSupport.StatusLine);
         DebugLog.Write("Harmony patched, plugin initialized GPU=" + GpuSupport.StatusLine);
     }
 
@@ -73,9 +68,9 @@ public sealed class Plugin : IPlugin
         // Leave Harmony patches in place. Pulsar only disposes plugins at
         // process exit; UnpatchAll rewrites shared trampolines while other
         // plugins may still be running. DeviceDisposePatch stays applied so
-        // NGX can shut down when the D3D device is released.
+        // FRS can shut down when the D3D device is released.
         ConfigStorage.FlushPending(true);
-        DlssRuntime.Shutdown();
+        FrsRuntime.Shutdown();
         AnomalyTerminalHook.Reset();
         GpuSupport.Reset();
         settingsGenerator = null;
@@ -88,11 +83,11 @@ public sealed class Plugin : IPlugin
     {
         if (disposed)
             return;
-        // Pulsar finishes every plugin Init before the first Update. NGX D3D11
+        // Pulsar finishes every plugin Init before the first Update. FRS D3D11
         // init must not overlap Anomaly (or other plugins) Harmony.PatchAll.
         AnomalyTerminalHook.TryInstall();
         ConfigStorage.FlushPending();
-        DlssRuntime.NotifyPluginsReady();
+        FrsRuntime.NotifyPluginsReady();
     }
 
     // ReSharper disable once UnusedMember.Global
@@ -135,9 +130,27 @@ public sealed class Plugin : IPlugin
         if (File.Exists(path))
             path = Path.GetDirectoryName(path);
 
-        NgxHost.AddSearchPath(path);
+        FrsHost.AddSearchPath(path);
         var label = string.IsNullOrEmpty(name) ? path : name + "=" + path;
-        MyLog.Default.WriteLine("DLSS asset: " + label);
+        MyLog.Default.WriteLine("FRS asset: " + label);
         DebugLog.Write("LoadAssets " + label);
+    }
+
+    static void AddDefaultSearchPaths()
+    {
+        FrsHost.AddSearchPath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+        try
+        {
+            var pulsar = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule?.FileName);
+            if (string.IsNullOrEmpty(pulsar))
+                return;
+            FrsHost.AddSearchPath(Path.Combine(pulsar, "Legacy", "Local"));
+            FrsHost.AddSearchPath(Path.Combine(pulsar, "Interim", "Local"));
+            FrsHost.AddSearchPath(Path.Combine(pulsar, "Local"));
+        }
+        catch
+        {
+            // ignored
+        }
     }
 }

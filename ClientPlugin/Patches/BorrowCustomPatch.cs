@@ -1,4 +1,4 @@
-using ClientPlugin.Dlss;
+using ClientPlugin.Frs;
 using HarmonyLib;
 using VRage.Render11.Resources;
 
@@ -16,19 +16,23 @@ internal static class BorrowCustomPatch
         int samplesQuality,
         ref IBorrowedCustomTexture __result)
     {
-        if (!DlssRuntime.IsLive || !DlssRuntime.EvaluatedThisFrame)
+        if (!FrsRuntime.IsLive || !FrsRuntime.EvaluatedThisFrame)
             return true;
         if (debugName != "DrawGameScene.ChromaticAberration" &&
             debugName != "MyRender11.FXAA.Rgb8")
             return true;
 
-        var output = DlssRuntime.OutputResolution();
+        var output = FrsRuntime.OutputResolution();
         if (output.X <= 0 || output.Y <= 0)
             return true;
 
-        // The name-only overload uses internal ResolutionI and would downsample the output-sized HDR result.
-        DebugLog.WriteFrame("BorrowCustom " + debugName + " at output " + output);
-        __result = __instance.BorrowCustom(debugName, output.X, output.Y, samplesCount, samplesQuality);
+        // Persist the output-sized dest. DrawGameScene Release()s Chromatic /
+        // FXAA every frame; a pooled 5120x1440 fp16 recycle under the GPU
+        // hung after the HDR dest was already made persistent.
+        __result = FrsRuntime.AcquirePostProcessDest();
+        if (__result == null)
+            return true;
+        DebugLog.WriteFrame("BorrowCustom " + debugName + " at output " + output + " persistent");
         return false;
     }
 }

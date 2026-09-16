@@ -1,4 +1,4 @@
-using ClientPlugin.Dlss;
+using ClientPlugin.Frs;
 using HarmonyLib;
 using VRageRender;
 
@@ -11,7 +11,7 @@ internal static class DrawGameSceneJitterPatch
     [HarmonyPriority(Priority.First)]
     private static void Prefix()
     {
-        if (!DlssRuntime.IsLive)
+        if (!FrsRuntime.IsLive)
             return;
         var env = MyRender11.Environment;
         if (env != null)

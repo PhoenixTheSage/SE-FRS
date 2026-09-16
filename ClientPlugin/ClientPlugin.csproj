@@ -8,7 +8,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <RootNamespace>ClientPlugin</RootNamespace>
-    <AssemblyName>SpaceEngineersDLSS</AssemblyName>
+    <AssemblyName>SpaceEngineersFRS</AssemblyName>
     <LangVersion>14</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
       

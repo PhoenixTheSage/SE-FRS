@@ -1,4 +1,4 @@
-using ClientPlugin.Dlss;
+using ClientPlugin.Frs;
 using HarmonyLib;
 using Sandbox.Engine.Platform.VideoMode;
 using Sandbox.Graphics.GUI;
@@ -32,7 +32,7 @@ internal static class GraphicsOptionsAaPatch
         MyGuiScreenOptionsGraphics __instance,
         ref MyGraphicsSettings graphicsSettings)
     {
-        GameAntiAliasing.RemapDlssKey(Combo(__instance), ref graphicsSettings);
+        GameAntiAliasing.RemapFrsKey(Combo(__instance), ref graphicsSettings);
     }
 
     [HarmonyPrefix]

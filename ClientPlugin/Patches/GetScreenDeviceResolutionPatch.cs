@@ -1,4 +1,4 @@
-using ClientPlugin.Dlss;
+using ClientPlugin.Frs;
 using HarmonyLib;
 using VRageRender;
 
@@ -22,14 +22,14 @@ internal static class GetScreenDeviceResolutionPatch
     [HarmonyPrefix]
     private static bool Prefix(out int width, out int height, ref bool __result)
     {
-        if (!DlssRuntime.WantsDlss)
+        if (!FrsRuntime.WantsFrs)
         {
             width = 0;
             height = 0;
             return true;
         }
 
-        var size = DlssRuntime.OutputResolution();
+        var size = FrsRuntime.OutputResolution();
         if (size.X <= 0 || size.Y <= 0)
         {
             width = 0;

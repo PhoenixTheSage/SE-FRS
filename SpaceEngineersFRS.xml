@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<PluginData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="GitHubPlugin">
+
+    <Id>D9B57764-6E31-4F07-B16B-30F8C4E92E35</Id>
+    <RepoId>PhoenixTheSage/SE-FRS</RepoId>
+    <FriendlyName>AMD FRS</FriendlyName>
+    <Author>PhoenixTheSage</Author>
+    <Tooltip>Enables AMD FRS 2.2.1</Tooltip>
+    <Description>
+Adds AMD FRS 2.2.1 in Space Engineers, the highest for DX11.
+
+Optional Anomaly Shader Framework supplies object motion to prevent ghosting.
+When Anomaly and Rich HUD Master are loaded, settings also appear under Anomaly Shaders.
+
+Compat: Certain rendering mods may not play nice until they use Anomaly.
+    </Description>
+
+    <SourceDirectories>
+        <Directory>ClientPlugin</Directory>
+    </SourceDirectories>
+
+    <!-- No GitHub Asset until amd_frs.dll is published. Pulsar treats a 404 as
+         Network! and refuses to load the plugin. Local -Sources uses Assets/amd_frs.dll
+         copied to Pulsar Legacy\Local by Native\build.bat + ClientPlugin deploy. -->
+
+    <Platforms>Windows</Platforms>
+
+    <!-- Do not list Master or Anomaly here. Anomaly is detected at runtime. -->
+
+</PluginData>

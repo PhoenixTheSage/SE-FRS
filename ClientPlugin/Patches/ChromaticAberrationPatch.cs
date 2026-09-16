@@ -1,4 +1,4 @@
-using ClientPlugin.Dlss;
+using ClientPlugin.Frs;
 using HarmonyLib;
 using VRage.Render11.Resources;
 using VRageMath;
@@ -12,7 +12,7 @@ internal static class ChromaticAberrationPatch
     [HarmonyPrefix]
     private static void Prefix(IUavBindable dst)
     {
-        if (!DlssRuntime.IsLive || dst == null)
+        if (!FrsRuntime.IsLive || dst == null)
             return;
 
         var size = dst.Size;

@@ -1,5 +1,5 @@
 using System;
-using ClientPlugin.Dlss;
+using ClientPlugin.Frs;
 using HarmonyLib;
 using VRageRender;
 
@@ -14,17 +14,17 @@ internal static class DrawPatch
         try
         {
             GpuSupport.TryProbe();
-            DlssRuntime.SnapshotOutputSize();
-            DlssRuntime.EvaluatedThisFrame = false;
-            DlssRuntime.BeginFrameResources();
-            if (DlssRuntime.WantsDlss)
+            FrsRuntime.SnapshotOutputSize();
+            FrsRuntime.EvaluatedThisFrame = false;
+            FrsRuntime.BeginFrameResources();
+            if (FrsRuntime.WantsFrs)
             {
-                DlssRuntime.TryPrepareFrame();
-                if (DlssRuntime.IsLive)
+                FrsRuntime.TryPrepareFrame();
+                if (FrsRuntime.IsLive)
                 {
                     Jitter.BeginFrame();
                     // Sprites record before DrawScene and must see the swapchain size.
-                    DlssRuntime.RestoreViewportToOutput();
+                    FrsRuntime.RestoreViewportToOutput();
                 }
             }
             AnomalyHook.SyncUpscaleClaim();

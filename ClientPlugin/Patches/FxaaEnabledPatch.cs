@@ -1,4 +1,4 @@
-using ClientPlugin.Dlss;
+using ClientPlugin.Frs;
 using HarmonyLib;
 using VRageRender;
 
@@ -10,7 +10,7 @@ internal static class FxaaEnabledPatch
     [HarmonyPrefix]
     private static bool Prefix(ref bool __result)
     {
-        if (!DlssRuntime.IsLive)
+        if (!FrsRuntime.IsLive)
             return true;
         __result = false;
         return false;

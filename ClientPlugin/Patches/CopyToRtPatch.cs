@@ -1,5 +1,5 @@
 using System;
-using ClientPlugin.Dlss;
+using ClientPlugin.Frs;
 using HarmonyLib;
 using VRage.Render11.Resources;
 using VRageRender;
@@ -20,16 +20,16 @@ internal static class CopyToRtPatch
         // HDR evaluate dest is still a UAV. Drawing PostPP on it is dropped,
         // and treating that as success skipped the swapchain pass. Keen
         // copies the scene; HUD composites after DrawScene jitter restore.
-        if (DlssRuntime.ShouldYieldPresentPath)
+        if (FrsRuntime.ShouldYieldPresentPath)
             return true;
-        if (!DlssRuntime.IsLive || destination == null || source == null)
+        if (!FrsRuntime.IsLive || destination == null || source == null)
             return true;
         if (!ReferenceEquals(destination, MyRender11.Backbuffer))
             return true;
 
-        var output = DlssRuntime.OutputResolution();
+        var output = FrsRuntime.OutputResolution();
         DebugLog.WriteFrame(
-            (DlssRuntime.EvaluatedThisFrame ? "CopyToRT blit after evaluate " : "CopyToRT blit ") +
+            (FrsRuntime.EvaluatedThisFrame ? "CopyToRT blit after evaluate " : "CopyToRT blit ") +
             source.Size + " -> " + output);
 
         // The swapchain lacks a UAV, and its reported size follows internal ResolutionI.
@@ -41,7 +41,7 @@ internal static class CopyToRtPatch
         finally
         {
             _passthrough = false;
-            DlssRuntime.RestoreViewportToOutput();
+            FrsRuntime.RestoreViewportToOutput();
         }
         return false;
     }
