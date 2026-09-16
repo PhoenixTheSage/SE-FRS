@@ -4,5 +4,6 @@ public enum AntiAliasingChoice
 {
     Off = 0,
     FXAA = 1,
-    FRS = 2
+    DLSS = 2,
+    FRS = 3
 }

@@ -80,6 +80,7 @@ public static class FrsStatus
             sb.Append("     dest  ").AppendLine(FrsRuntime.LastEvaluateDestDesc);
 
         sb.Append("     jitter ")
+            .Append(Jitter.FromFsr ? "fsr " : "halton ")
             .Append(Jitter.OffsetX.ToString("0.###", CultureInfo.InvariantCulture))
             .Append(',')
             .Append(Jitter.OffsetY.ToString("0.###", CultureInfo.InvariantCulture));

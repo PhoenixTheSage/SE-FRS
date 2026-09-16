@@ -15,7 +15,7 @@ Settings live in the Pulsar plugin dialog. When [Anomaly Shader Framework](https
 
 Plugin config or **Options → Graphics → Anti-aliasing**:
 
-- **Anti-aliasing** — Off, FXAA, or FRS (shared with the game's graphics options; FRS disables FXAA)
+- **Anti-aliasing** — Off, FXAA, FRS, and DLSS when [NVIDIA DLSS](https://github.com/PhoenixTheSage/SE-DLSS) is loaded and the GPU can offer it. Shared with **Options → Graphics** and with DLSS (Pulsar + Rich HUD). Only one upscaler can be selected.
 - **Mode** — Quality (1.5×), Balanced (1.7×), Performance (2×), Ultra Performance (3×), or NativeAA (1.0× temporal AA)
 - **Sharpness** — FSR 2 RCAS after upscale; 0 is off
 - **Show Status** — GPU, FRS context, internal vs output resolution, Anomaly velocity / reactive / AfterUpscale
@@ -55,7 +55,13 @@ The binary is served from the GitHub release named in `SpaceEngineersFRS.xml` (`
 
 ## Known interactions
 
-These plugins patch the same render-thread surfaces. Prefer not enabling them together until a handshake exists.
+These plugins patch the same render-thread surfaces. FRS and DLSS handshake on anti-aliasing: each adds its option to the shared AA list (graphics, Pulsar, Rich HUD) and they keep one exclusive selection. A leftover DLSS selection on an unsupported GPU is coerced; enabling FRS selects FRS on both settings pages.
+
+### DLSS
+
+Overlap: anti-aliasing ownership and DRS. Well-known type `ClientPlugin.Frs.AntiAliasingHandshake` / `ClientPlugin.Dlss.AntiAliasingHandshake` (no compile-time reference). Graphics combo keys 101 (FRS) and 100 (DLSS). `ForeignUpscalerDrsPatch` still skips DLSS DRS while FRS owns it.
+
+- **Safe now:** pick FRS or DLSS as the AA. Changing it in either plugin, Rich HUD, or Options → Graphics updates the other.
 
 ### HdrRender
 

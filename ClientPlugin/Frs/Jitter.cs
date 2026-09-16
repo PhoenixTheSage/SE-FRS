@@ -8,6 +8,7 @@ internal static class Jitter
 {
     public static float OffsetX { get; private set; }
     public static float OffsetY { get; private set; }
+    public static bool FromFsr { get; private set; }
     public static Matrix JitteredInvViewProjection { get; private set; }
     public static Matrix UnjitteredViewProjection { get; private set; }
     public static Matrix PreviousViewProjection { get; private set; }
@@ -42,6 +43,7 @@ internal static class Jitter
         _hasCameraSample = false;
         OffsetX = 0f;
         OffsetY = 0f;
+        FromFsr = false;
         JitteredInvViewProjection = default(Matrix);
         UnjitteredViewProjection = default(Matrix);
         PreviousViewProjection = default(Matrix);
@@ -57,11 +59,13 @@ internal static class Jitter
         {
             OffsetX = jx;
             OffsetY = jy;
+            FromFsr = true;
         }
         else
         {
             OffsetX = Halton(_frameIndex, 2) - 0.5f;
             OffsetY = Halton(_frameIndex, 3) - 0.5f;
+            FromFsr = false;
         }
         _frameIndex++;
         HasPrevious = _frameIndex > 1;
@@ -153,9 +157,14 @@ internal static class Jitter
         ndcY = 0f;
         if (!TryGetRenderSize(out var width, out var height))
             return;
-        // FSR 2.2.1: NDC x = 2 * jitterX / renderWidth, y = -2 * jitterY / renderHeight.
-        ndcX = OffsetX * 2f / width;
-        ndcY = -OffsetY * 2f / height;
+        // FSR pixel jitter still goes to dispatch as (OffsetX, OffsetY). Keen's
+        // XNA v*M projection stores clip offsets in M31/M32 — the same mapping
+        // DLSS uses. The FSR sample's +X/−Y NDC is for column-major left-multiply
+        // and inverts Keen, so the raster swims like a stretch blit of jitter.
+        var jitterNdcX = OffsetX * 2f / width;
+        var jitterNdcY = OffsetY * 2f / height;
+        ndcX = -jitterNdcX;
+        ndcY = jitterNdcY;
     }
 
     public static void CopyToArray(Matrix matrix, float[] dest)

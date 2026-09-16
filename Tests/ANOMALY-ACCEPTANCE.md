@@ -7,8 +7,8 @@ These include local, uncommitted producer updates. GitHub fetches were unavailab
 this is validation against the local update, not confirmation of a published release.
 
 The required convention is exactly 15: unjittered, internal pixel units, Y down,
-current-to-previous. `previousPixel = currentPixel + motion`. FRS scale is (+1,+1),
-MVLowRes is enabled and MVJittered disabled. Legacy 7 and unknown flags fall back.
+current-to-previous. `previousPixel = currentPixel + motion`. FRS motion-vector
+scale is (+1,+1). Legacy 7 and unknown flags fall back.
 The catalog cannot certify conventions and is no longer a velocity fallback.
 VelocityProbe must be readable and Off. Missing probe metadata fails closed.
 Anomaly does not expose producer frame IDs or frame-latched probe state; freshness

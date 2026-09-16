@@ -28,7 +28,7 @@ public class Config : INotifyPropertyChanged
     [Separator("Anti-aliasing")]
 
     [Dropdown(visibleRows: 10, label: "Anti-aliasing",
-        description: "FRS replaces FXAA; choose Off or FXAA to use the game's anti-aliasing.")]
+        description: "Shared with Options → Graphics and DLSS when that plugin is loaded. Only one upscaler can be selected.")]
     public AntiAliasingChoice AntiAliasing
     {
         get => antiAliasing;
@@ -52,7 +52,10 @@ public class Config : INotifyPropertyChanged
         set
         {
             if (value)
-                AntiAliasing = AntiAliasingChoice.FRS;
+            {
+                if (antiAliasing == AntiAliasingChoice.Off)
+                    AntiAliasing = AntiAliasingChoice.FRS;
+            }
             else if (antiAliasing == AntiAliasingChoice.FRS)
                 AntiAliasing = AntiAliasingChoice.Off;
         }

@@ -86,7 +86,7 @@ def _replace_text_in_file(replacements: dict[str, str], path: str) -> None:
 
 def _input_plugin_name() -> str:
     print("Name of the plugin in CapitalizedWords format (C# identifier).")
-    print("Examples: MyCoolPlugin, SeDlss, DlssPlugin")
+    print("Examples: MyCoolPlugin, SeFrs, FrsPlugin")
     print("Hyphens and spaces are not allowed. Press Enter to skip renaming.")
 
     while True:
@@ -99,7 +99,7 @@ def _input_plugin_name() -> str:
 
         print(
             f"Invalid plugin name {plugin_name!r}. "
-            f"It must match {PT_PROJECT_NAME} (e.g. SeDlss, not SE-DLSS)."
+            f"It must match {PT_PROJECT_NAME} (e.g. SeFrs, not SE-FRS)."
         )
 
 

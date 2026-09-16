@@ -13,7 +13,7 @@ internal static class ToneMappingPatch
     private static bool _exceptionLogged;
 
     // Skip Keen SDR (and HdrRender's scRGB prefix result) when HDR
-    // evaluate is required. Same gate as FRS IsHDR create flags.
+    // evaluate is required. Same gate as FRS_FLAG_HDR create flags.
     [HarmonyPrefix]
     [HarmonyPriority(Priority.First)]
     private static bool Prefix(ref IBorrowedCustomTexture __result)

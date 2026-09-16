@@ -46,6 +46,7 @@ public static class FrsRuntime
 
     private static bool _configChanged = true;
     private static bool _resetHistory = true;
+    private static bool _ownsInternalDrs;
     private static volatile bool _pluginsReady;
     private static int _consecutiveEvaluateFails;
     private static Vector2I _cachedOutput;
@@ -82,7 +83,7 @@ public static class FrsRuntime
     public static bool ShouldYieldPresentPath => WantsHdrEvaluate;
 
     /// <summary>
-    /// Pre-tonemap evaluate + FRS <c>IsHDR</c>. Same gate as feature create
+    /// Pre-tonemap evaluate + FSR 2 HDR (`FRS_FLAG_HDR`). Same gate as feature create
     /// so an scRGB swapchain cannot reconstruct Keen SDR.
     /// </summary>
     public static bool WantsHdrEvaluate =>
@@ -184,6 +185,7 @@ public static class FrsRuntime
             DebugLog.Write("ReleasePostProcessDest during shutdown: " + e);
         }
         InternalWidth = InternalHeight = OutputWidth = OutputHeight = 0;
+        _ownsInternalDrs = false;
         _cachedOutput = default(Vector2I);
         _configChanged = true;
         _resetHistory = true;
@@ -210,18 +212,23 @@ public static class FrsRuntime
         var target = DesiredInternalResolution();
         if (target.X <= 0 || target.Y <= 0)
             return;
-        if (MyRender11.ResolutionI == target)
-            return;
-
-        // Keen's SetDRS resizes GBuffer/HBAO without using the console DRS Present path.
-        DisableConsoleDrs();
-        DebugLog.Write("SetDRS internal " + MyRender11.ResolutionI + " -> " + target);
-        MyRender11.SetDRS(target);
+        if (MyRender11.ResolutionI != target)
+        {
+            // Keen's SetDRS resizes GBuffer/HBAO without using the console DRS Present path.
+            DisableConsoleDrs();
+            DebugLog.Write("SetDRS internal " + MyRender11.ResolutionI + " -> " + target);
+            MyRender11.SetDRS(target);
+        }
+        _ownsInternalDrs = true;
         PinViewportToInternal();
     }
 
     public static void RestoreOutputResolution()
     {
+        // Another upscaler (DLSS) may own DRS. Do not snap back to the swapchain
+        // size unless this plugin applied the internal resolution.
+        if (!_ownsInternalDrs)
+            return;
         DisableConsoleDrs();
         var output = OutputResolution();
         if (output.X <= 0 || output.Y <= 0)
@@ -231,6 +238,7 @@ public static class FrsRuntime
             DebugLog.Write("SetDRS output " + MyRender11.ResolutionI + " -> " + output);
             MyRender11.SetDRS(output);
         }
+        _ownsInternalDrs = false;
         RestoreViewportToOutput();
     }
 
@@ -881,6 +889,7 @@ public static class FrsRuntime
                 _resetHistory = true;
                 LastEvaluateFailed = true;
                 _consecutiveEvaluateFails++;
+                LastBindingEvidence = BindingContext + " FRS bind failed";
                 MyLog.Default.Warning("FRS evaluate failed: " + FrsHost.LastError);
                 DebugLog.Write("TryEvaluate fail #" + _consecutiveEvaluateFails +
                                " dest=" + destination.Size + " src=" + source.Size + " " + FrsHost.LastError);
@@ -891,11 +900,14 @@ public static class FrsRuntime
             {
                 _consecutiveEvaluateFails = 0;
                 EvaluateCount++;
+                LastBindingEvidence = BindingContext + " FRS bound";
                 DebugLog.WriteFrame("TryEvaluate ok dest=" + destination.Size.X + "x" + destination.Size.Y +
                                     " src=" + source.Size.X + "x" + source.Size.Y +
                                     " reset=" + reset +
                                     " mv=" + (usedExternal ? "anomaly" : mvec != IntPtr.Zero ? "camera" : "none") +
-                                    " reactive=" + (usedReactive ? "anomaly" : "none"));
+                                    " reactive=" + (usedReactive ? "anomaly" : "none") +
+                                    " jitter=" + (Jitter.FromFsr ? "fsr" : "halton") +
+                                    " " + Jitter.OffsetX.ToString("0.###") + "," + Jitter.OffsetY.ToString("0.###"));
             }
 
             RecordEvaluateFormats(destination, source);
@@ -933,13 +945,30 @@ public static class FrsRuntime
         try
         {
             var size = resource.Size;
-            var format = resource is ITexture tex ? tex.Format.ToString() : "?";
+            var format = FormatName(resource);
             return format + " " + size.X + "x" + size.Y;
         }
         catch (Exception e)
         {
             return e.GetType().Name;
         }
+    }
+
+    static string FormatName(IResource resource)
+    {
+        try
+        {
+            if (resource.Resource is Texture2D tex)
+                return tex.Description.Format.ToString();
+        }
+        catch
+        {
+            // ignored
+        }
+
+        if (resource is ITexture named)
+            return named.Format.ToString();
+        return "?";
     }
 
     private static string MyFileLogPath()
