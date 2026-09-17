@@ -244,6 +244,11 @@ internal static class BillboardOutputPass
             return true;
         }
 
+        // GatherInternal draws RenderTarget HUD materials via DrawSpritesOffscreen,
+        // which can MapDiscard FrameConstants. Re-bind unjittered VP at output size
+        // before the PostPP VS runs.
+        FrsRuntime.BindUnjitteredHudConstants();
+
         if (dest.Rtv == null)
         {
             LogHudOnce(reason + " dest has no RTV size=" + dest.Size);

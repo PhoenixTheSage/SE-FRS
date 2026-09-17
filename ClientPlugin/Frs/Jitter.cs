@@ -52,10 +52,14 @@ internal static class Jitter
     public static void BeginFrame()
     {
         PreviousViewProjection = UnjitteredViewProjection;
+        var displayWidth = FrsRuntime.OutputWidth;
+        if (displayWidth <= 0)
+            displayWidth = FrsRuntime.OutputResolution().X;
+        TryGetRenderSize(out var renderWidth, out _);
         if (FrsHost.IsReady &&
-            TryGetRenderSize(out var renderWidth, out _) &&
-            FrsRuntime.OutputWidth > 0 &&
-            FrsHost.TryGetJitter(_frameIndex, renderWidth, FrsRuntime.OutputWidth, out var jx, out var jy))
+            renderWidth > 0 &&
+            displayWidth > 0 &&
+            FrsHost.TryGetJitter(_frameIndex, renderWidth, displayWidth, out var jx, out var jy))
         {
             OffsetX = jx;
             OffsetY = jy;
@@ -63,6 +67,9 @@ internal static class Jitter
         }
         else
         {
+            // FSR2's Halton is phase-wrapped (8*(display/render)^2). This
+            // unbounded sequence is last-resort only — it disagrees with
+            // dispatch and reads as HUD crawl at Quality/Balanced.
             OffsetX = Halton(_frameIndex, 2) - 0.5f;
             OffsetY = Halton(_frameIndex, 3) - 0.5f;
             FromFsr = false;

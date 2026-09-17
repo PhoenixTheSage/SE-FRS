@@ -295,6 +295,36 @@ public static class FrsRuntime
     }
 
     /// <summary>
+    /// Apply FSR jitter after <c>PrepareGameScene</c> and patch only the VP
+    /// fields. Do not call <see cref="MyCommon.UpdateFrameConstants"/> — that
+    /// zeros <c>CameraPositionDelta</c> on the second write, and GPU particles
+    /// then skip <c>position -= cameraPositionDelta</c> and ride the camera.
+    /// </summary>
+    public static void BindJitteredSceneConstants()
+    {
+        if (!IsLive)
+            return;
+        var env = MyRender11.Environment;
+        if (env == null)
+            return;
+        Jitter.Apply(env.Matrices);
+        WriteEnvironmentMatrices(env.Matrices, pinOutputViewport: false);
+    }
+
+    /// <summary>
+    /// Drop jitter from env + frame CB after the 3D scheduler. Leaves
+    /// <see cref="MyRender11.ViewportResolution"/> on the internal size so bloom /
+    /// tonemap keep using GBuffer extents.
+    /// </summary>
+    public static void UnjitterFrameConstants()
+    {
+        var envOwner = MyRender11.Environment;
+        if (envOwner != null)
+            Jitter.Restore(envOwner.Matrices);
+        WriteEnvironmentMatrices(envOwner?.Matrices, pinOutputViewport: false);
+    }
+
+    /// <summary>
     /// PostPP HUD VS multiplies by <c>frame_.Environment.view_projection_matrix</c>.
     /// <see cref="Jitter.Restore"/> puts env matrices back; PrepareGameScene already
     /// captured the jittered VP into this CB. Rewrite it from the restored env
@@ -306,14 +336,20 @@ public static class FrsRuntime
         var envOwner = MyRender11.Environment;
         if (envOwner != null)
             Jitter.Restore(envOwner.Matrices);
+        WriteEnvironmentMatrices(envOwner?.Matrices, pinOutputViewport: true);
+    }
 
+    static void WriteEnvironmentMatrices(MyEnvironmentMatrices env, bool pinOutputViewport)
+    {
         var output = OutputResolution();
-        if (output.X <= 0 || output.Y <= 0)
-            return;
-        MyRender11.ViewportResolution = output;
+        if (pinOutputViewport)
+        {
+            if (output.X <= 0 || output.Y <= 0)
+                return;
+            MyRender11.ViewportResolution = output;
+        }
 
         var data = MyCommon.FrameConstantsData;
-        var env = envOwner?.Matrices;
         if (env != null)
         {
             data.Environment.View = Matrix.Transpose(env.ViewAt0);
@@ -325,7 +361,8 @@ public static class FrsRuntime
             data.Environment.InvViewProjection = Matrix.Transpose(env.InvViewProjectionAt0);
             data.Environment.WorldOffset = new Vector4(env.CameraPosition, 0f);
         }
-        data.Screen.Resolution = new Vector2(output.X, output.Y);
+        if (pinOutputViewport)
+            data.Screen.Resolution = new Vector2(output.X, output.Y);
         MyCommon.FrameConstantsData = data;
         var mapping = MyMapping.MapDiscard(MyCommon.FrameConstants);
         try
