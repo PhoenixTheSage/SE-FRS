@@ -445,10 +445,11 @@ internal static class BillboardOutputPass
         if (!HasBucket(bucket))
             return true;
 
+        var outputDepth = FrsRuntime.TryAcquireOutputDepth(sceneDepth, target.Size);
+        // The depth pass clears both the native context and Keen's state cache.
+        // Rebind draw state after it, including when depth generation failed.
         rc.SetViewport(0f, 0f, target.Size.X, target.Size.Y);
         rc.SetBlendState(MyBlendStateManager.BlendAlphaPremult);
-
-        var outputDepth = FrsRuntime.TryAcquireOutputDepth(sceneDepth, target.Size);
         if (outputDepth != null)
         {
             DebugLog.WriteFrame("Billboard LDR upsampled depth dest=" + target.Size + " src=" + sceneDepth.Size);

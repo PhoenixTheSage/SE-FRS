@@ -94,3 +94,6 @@ Overlap: render-thread camera interpolation plus this plugin's jitter on `DrawGa
 Open an issue with **Show Status** text, GPU, driver version, and `SpaceEngineers.log`.
 
 Anomaly consumer verification and in-game acceptance procedure: [Tests/ANOMALY-ACCEPTANCE.md](Tests/ANOMALY-ACCEPTANCE.md). Numerical reprojection and ghosting acceptance remain pending in-game captures.
+
+Rendering/discovery regression checks and HDR failure recovery:
+[Tests/RENDERING-REGRESSION.md](Tests/RENDERING-REGRESSION.md).

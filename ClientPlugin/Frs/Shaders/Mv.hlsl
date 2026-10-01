@@ -3,6 +3,7 @@ cbuffer Constants : register(b0)
 {
     float4x4 InvViewProj;
     float4x4 UnjitteredViewProj;
+    // Includes current-to-previous camera-origin translation, composed in C#.
     float4x4 PrevViewProj;
     float2 RenderSize;
     float2 InvRenderSize;

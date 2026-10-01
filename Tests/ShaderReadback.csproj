@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems><ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="SharpDX"><HintPath>$(Bin64)/SharpDX.dll</HintPath></Reference>
+    <Reference Include="SharpDX.Direct3D11"><HintPath>$(Bin64)/SharpDX.Direct3D11.dll</HintPath></Reference>
+    <Reference Include="SharpDX.DXGI"><HintPath>$(Bin64)/SharpDX.DXGI.dll</HintPath></Reference>
+    <Compile Include="ShaderReadback.cs" />
+    <Compile Include="../ClientPlugin/Frs/FrsD3d.cs" Link="FrsD3d.cs" />
+    <Compile Include="../ClientPlugin/Frs/FrsNative.cs" Link="FrsNative.cs" />
+    <Compile Include="../ClientPlugin/Frs/ShaderBytecode.cs" Link="ShaderBytecode.cs" />
+  </ItemGroup>
+  <Target Name="VerifySharpDx" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(Bin64)/SharpDX.Direct3D11.dll')" Text="Set Bin64 in Directory.Build.props.user or pass -p:Bin64=path-to-game-Bin64." />
+  </Target>
+</Project>

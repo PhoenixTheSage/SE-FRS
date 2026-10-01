@@ -20,29 +20,27 @@ internal static class ToneMappingPatch
     {
         if (!FrsRuntime.IsLive || !FrsRuntime.WantsHdrEvaluate)
             return true;
-        if (FrsRuntime.EvaluatedThisFrame)
-        {
-            __result = FrsRuntime.AcquireHdrOutput();
-            return false;
-        }
         try
         {
-            if (!FrsRuntime.TryEvaluateHdrDisplay())
+            if (!FrsRuntime.EvaluatedThisFrame && !FrsRuntime.TryEvaluateHdrDisplay())
             {
-                // Do not run Keen's SDR operator onto an scRGB dest — that
-                // clips peaks and is what Show Status reported as LDR.
-                DebugLog.Write("ToneMapping skip Keen SDR after HDR evaluate miss");
-                __result = FrsRuntime.AcquireHdrOutput();
-                return false;
+                FrsRuntime.SuspendHdrEvaluate();
+                return true;
             }
-            __result = FrsRuntime.AcquireHdrOutput();
+            var dest = FrsRuntime.HdrOutputThisFrame;
+            if (dest == null)
+            {
+                FrsRuntime.SuspendHdrEvaluate();
+                return true;
+            }
+            __result = dest;
             return false;
         }
         catch (Exception e)
         {
             LogOnce(e);
-            __result = FrsRuntime.AcquireHdrOutput();
-            return false;
+            FrsRuntime.SuspendHdrEvaluate();
+            return true;
         }
     }
 

@@ -16,6 +16,8 @@ internal static class PeerAntiAliasing
     static MethodInfo _getChoice;
     static MethodInfo _applyChoice;
     static long? _graphicsKey;
+    static readonly object Gate = new();
+    static int _discoveryVersion = -1;
 
     public static bool Present
     {
@@ -85,8 +87,27 @@ internal static class PeerAntiAliasing
 
     static void Ensure()
     {
-        if (_type != null)
+        lock (Gate)
+            EnsureUnlocked();
+    }
+
+    internal static void Reset()
+    {
+        lock (Gate)
+        {
+            _type = null;
+            _canOffer = _getChoice = _applyChoice = null;
+            _graphicsKey = null;
+            _discoveryVersion = -1;
+        }
+    }
+
+    static void EnsureUnlocked()
+    {
+        var version = AssemblyDiscovery.Version;
+        if (_type != null || _discoveryVersion == version)
             return;
+        _discoveryVersion = version;
 
         Type found = null;
         try
@@ -119,7 +140,6 @@ internal static class PeerAntiAliasing
         if (found == null)
             return;
 
-        _type = found;
         const BindingFlags flags = BindingFlags.Public | BindingFlags.Static;
         _canOffer = found.GetMethod("CanOffer", flags, null, Type.EmptyTypes, null);
         _getChoice = found.GetMethod("GetChoice", flags, null, Type.EmptyTypes, null);
@@ -127,6 +147,7 @@ internal static class PeerAntiAliasing
         var key = found.GetField("GraphicsComboKey", flags);
         if (key != null && key.FieldType == typeof(long))
             _graphicsKey = (long)key.GetValue(null);
+        _type = found;
         DebugLog.Write("handshake peer " + TypeName + " key=" + GraphicsComboKey);
     }
 }

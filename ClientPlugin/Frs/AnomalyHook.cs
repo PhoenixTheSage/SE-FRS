@@ -58,7 +58,9 @@ internal static class AnomalyHook
     private static PropertyInfo _historyValid;
     private static PropertyInfo _srv;
     private static bool _claimedUpscale;
-    private static bool _loadHooked;
+    private static int _discoveryVersion = -1;
+    private static bool _retryBinding;
+    private static int _lastBindingFailureTick;
     private static bool _loggedFound;
     private static bool _loggedMissing;
     private static bool _loggedUnavailable;
@@ -136,11 +138,7 @@ internal static class AnomalyHook
     {
         lock (Gate)
         {
-            EnsureLoadHook();
-            if (_activeProperty == null || _catalogActive == null ||
-                (_notifyUpscale == null && _notifyUpscale2 == null) ||
-                _invalidateHistory == null || _velocitySource == null)
-                ScanAssembliesUnlocked();
+            ScanIfChangedUnlocked();
             SyncClaimUnlocked();
         }
     }
@@ -153,9 +151,7 @@ internal static class AnomalyHook
     {
         lock (Gate)
         {
-            EnsureLoadHook();
-            if (_claimUpscale == null && _releaseUpscale == null)
-                ScanAssembliesUnlocked();
+            ScanIfChangedUnlocked();
             SyncClaimUnlocked();
         }
     }
@@ -173,20 +169,8 @@ internal static class AnomalyHook
     {
         lock (Gate)
         {
-            if (_loadHooked)
-            {
-                try
-                {
-                    AppDomain.CurrentDomain.AssemblyLoad -= OnAssemblyLoad;
-                }
-                catch
-                {
-                    // ignored
-                }
-
-                _loadHooked = false;
-            }
-
+            _discoveryVersion = -1;
+            _retryBinding = false;
             TryReleaseUpscaleUnlocked();
             ClearAccessors();
             _activeProperty = null;
@@ -496,6 +480,7 @@ internal static class AnomalyHook
                 {
                     ClearAccessors();
                     _activeProperty = null;
+                    RetryBindingUnlocked();
                 }
 
                 DebugLog.Write("Anomaly Active read failed: " + e.GetType().Name + ": " + e.Message);
@@ -542,6 +527,7 @@ internal static class AnomalyHook
             {
                 ClearAccessors();
                 _catalogActive = null;
+                RetryBindingUnlocked();
             }
 
             DebugLog.Write("Anomaly catalog read failed: " + e.GetType().Name + ": " + e.Message);
@@ -598,20 +584,23 @@ internal static class AnomalyHook
         return true;
     }
 
-    private static void EnsureLoadHook()
+    private static void ScanIfChangedUnlocked()
     {
-        if (_loadHooked)
+        var version = AssemblyDiscovery.Version;
+        var retry = _retryBinding && unchecked(Environment.TickCount - _lastBindingFailureTick) >= 1000;
+        if (_discoveryVersion == version && !retry)
             return;
-        AppDomain.CurrentDomain.AssemblyLoad += OnAssemblyLoad;
-        _loadHooked = true;
+        // Snapshot before scanning: an assembly loaded during reflection
+        // must invalidate this result on the next call.
+        _discoveryVersion = version;
+        _retryBinding = false;
+        ScanAssembliesUnlocked();
     }
 
-    private static void OnAssemblyLoad(object sender, AssemblyLoadEventArgs args)
+    private static void RetryBindingUnlocked()
     {
-        if (args?.LoadedAssembly == null)
-            return;
-        lock (Gate)
-            TryBindUnlocked(args.LoadedAssembly);
+        _retryBinding = true;
+        _lastBindingFailureTick = Environment.TickCount;
     }
 
     private static void ScanAssembliesUnlocked()
@@ -623,6 +612,7 @@ internal static class AnomalyHook
         }
         catch
         {
+            RetryBindingUnlocked();
             return;
         }
 
@@ -691,6 +681,7 @@ internal static class AnomalyHook
         }
         catch (Exception e)
         {
+            RetryBindingUnlocked();
             DebugLog.Write("Anomaly scan skipped: " + e.GetType().Name);
         }
     }

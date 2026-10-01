@@ -20,6 +20,9 @@ internal static class Jitter
     private static Vector3 _previousForward;
     private static float _previousFovV;
     private static bool _hasCameraSample;
+    private static Vector3D _matrixCameraPosition;
+    private static Vector3D _previousMatrixCameraPosition;
+    private static Matrix _previousUnjitteredViewProjection;
     private static Matrix _savedProjection;
     private static Matrix _savedProjectionForSkybox;
     private static Matrix _savedViewProjectionAt0;
@@ -47,11 +50,15 @@ internal static class Jitter
         JitteredInvViewProjection = default(Matrix);
         UnjitteredViewProjection = default(Matrix);
         PreviousViewProjection = default(Matrix);
+        _matrixCameraPosition = _previousMatrixCameraPosition = default(Vector3D);
+        _previousUnjitteredViewProjection = default(Matrix);
     }
 
     public static void BeginFrame()
     {
-        PreviousViewProjection = UnjitteredViewProjection;
+        _previousUnjitteredViewProjection = UnjitteredViewProjection;
+        _previousMatrixCameraPosition = _matrixCameraPosition;
+        PreviousViewProjection = _previousUnjitteredViewProjection;
         var displayWidth = FrsRuntime.OutputWidth;
         if (displayWidth <= 0)
             displayWidth = FrsRuntime.OutputResolution().X;
@@ -129,6 +136,16 @@ internal static class Jitter
         _savedViewProjectionD = env.ViewProjectionD;
         _savedInvViewProjectionD = env.InvViewProjectionD;
         UnjitteredViewProjection = env.ViewProjectionAt0;
+        _matrixCameraPosition = env.CameraPosition;
+        // ViewAt0 omits translation. Convert current-camera-relative points
+        // to the previous origin before projection. Subtract in double precision
+        // so ordinary movement remains representable far from the world origin.
+        // Always derive from the frame snapshot: scheduler re-entry must not
+        // accumulate the translation after Restore/Apply in the same frame.
+        PreviousViewProjection = HasPrevious
+            ? Matrix.CreateTranslation((Vector3)(_matrixCameraPosition - _previousMatrixCameraPosition)) *
+              _previousUnjitteredViewProjection
+            : _previousUnjitteredViewProjection;
 
         GetProjectionNdc(out var ndcX, out var ndcY);
         env.Projection.M31 += ndcX;

@@ -22,6 +22,9 @@ conventions, all four current probes, unknown probe metadata, resize rejection,
 resource replacement, invalid history, unavailable/null buffers, cuts and source resets.
 It does not exercise D3D, FRS, or certify rendered image quality.
 
+Camera-origin, HDR routing, late-discovery and isolated baked-shader GPU checks:
+[RENDERING-REGRESSION.md](RENDERING-REGRESSION.md).
+
 ## In-game acceptance (pending)
 
 Use the same scene, FRS mode, jitter settings and exposure for every comparison.

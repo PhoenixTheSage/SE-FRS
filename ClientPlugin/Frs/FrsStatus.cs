@@ -63,7 +63,7 @@ public static class FrsStatus
     static void AppendEvaluate(StringBuilder sb)
     {
         sb.Append("Eval ");
-        if (FrsRuntime.EvaluateCount <= 0)
+        if (FrsRuntime.EvaluateCount <= 0 && string.IsNullOrEmpty(FrsRuntime.LastEvaluatePath))
             sb.AppendLine("none");
         else
         {

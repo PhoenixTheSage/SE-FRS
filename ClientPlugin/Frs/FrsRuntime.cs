@@ -49,6 +49,7 @@ public static class FrsRuntime
     private static bool _ownsInternalDrs;
     private static volatile bool _pluginsReady;
     private static int _consecutiveEvaluateFails;
+    private static volatile bool _renderSuspended;
     private static Vector2I _cachedOutput;
 #if DEBUG
     private static string _lastPrepareLog;
@@ -62,7 +63,7 @@ public static class FrsRuntime
         get
         {
             var config = Config.Current;
-            if (config == null || config.AntiAliasing != AntiAliasingChoice.FRS)
+            if (_renderSuspended || config == null || config.AntiAliasing != AntiAliasingChoice.FRS)
                 return false;
             GpuSupport.TryProbe();
             if (!GpuSupport.CanAttemptFrs)
@@ -129,6 +130,7 @@ public static class FrsRuntime
         _configChanged = true;
         _resetHistory = true;
         _consecutiveEvaluateFails = 0;
+        _renderSuspended = false;
         LastEvaluateFailed = false;
         Jitter.Reset();
         AnomalyHook.InvalidateHistory();
@@ -200,6 +202,7 @@ public static class FrsRuntime
         _evaluateAttempt = _renderFrame = 0;
         _evaluatedWidth = _evaluatedHeight = 0;
         _consecutiveEvaluateFails = 0;
+        _renderSuspended = false;
         _pluginsReady = false;
         AnomalyHook.Reset();
 #if DEBUG
@@ -570,8 +573,26 @@ public static class FrsRuntime
         if (!TryEvaluate(dest, source))
         {
             DebugLog.Write("ToneMapping HDR evaluate failed src=" + source.Size + " dest=" + dest.Size);
-            ReleaseHdrOutput();
-            return false;
+            // Keep presenting the current scene, including after temporal
+            // dispatch is disabled by the failure threshold. Linear HDR copy
+            // avoids SDR clipping; AfterUpscale still owns display conversion.
+            var rc = MyRender11.RC;
+            if (rc == null || dest.Linear == null)
+                return false;
+            rc.ClearState();
+            try
+            {
+                MyCopyToRT.Run(dest.Linear, source, false,
+                    new MyViewport(dest.Size.X, dest.Size.Y));
+            }
+            finally
+            {
+                rc.ClearState();
+            }
+            LastEvaluatePath = fromCatalog ? "HDR spatial fallback hdrColor" : "HDR spatial fallback LBuffer";
+            LastEvaluateFailed = true;
+            _resetHistory = true;
+            RecordEvaluateFormats(dest, source);
         }
 
         EvaluatedThisFrame = true;
@@ -589,6 +610,22 @@ public static class FrsRuntime
         DebugLog.WriteFrame("ToneMapping HDR evaluate src=" + DescribeResource(source) +
                             " dest=" + DescribeResource(dest));
         return true;
+    }
+
+    // Only return a populated target. Acquiring a replacement after a failed
+    // evaluate exposed undefined texels as the scene.
+    internal static IBorrowedCustomTexture HdrOutputThisFrame =>
+        EvaluatedThisFrame && LastEvaluateWasHdr ? _hdrOutput : null;
+
+    internal static void SuspendHdrEvaluate()
+    {
+        _renderSuspended = true;
+        LastEvaluateFailed = true;
+        EvaluatedThisFrame = false;
+        _resetHistory = true;
+        AnomalyHook.SyncUpscaleClaim();
+        // DrawScene restores native resolution next frame. Resizing GBuffer
+        // in the middle of tonemapping would invalidate the current inputs.
     }
 
     public static IBorrowedDepthStencilTexture TryAcquireOutputDepth(IDepthStencil source, Vector2I size)

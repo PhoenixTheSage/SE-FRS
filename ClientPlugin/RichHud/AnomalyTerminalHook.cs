@@ -20,6 +20,11 @@ internal static class AnomalyTerminalHook
     static readonly object Gate = new();
     static bool _installed;
     static object _page;
+    static MethodInfo _requestFolder;
+    static MethodInfo _requestPage;
+    static int _discoveryVersion = -1;
+    static bool _requestAttempted;
+    static int _lastRequestTick;
 
     public static bool Installed
     {
@@ -36,6 +41,22 @@ internal static class AnomalyTerminalHook
         {
             if (_installed)
                 return true;
+
+            var version = AssemblyDiscovery.Version;
+            if (_discoveryVersion != version)
+            {
+                _discoveryVersion = version;
+                FindRegistryUnlocked();
+                _requestAttempted = false;
+            }
+            if (_requestFolder == null && _requestPage == null)
+                return false;
+            // A registry can load before the world/Rich HUD session is ready.
+            // Keep retrying readiness without rescanning or calling it per tick.
+            if (_requestAttempted && unchecked(Environment.TickCount - _lastRequestTick) < 1000)
+                return false;
+            _requestAttempted = true;
+            _lastRequestTick = Environment.TickCount;
 
             var page = RequestPageUnlocked();
             if (page == null)
@@ -56,6 +77,9 @@ internal static class AnomalyTerminalHook
         {
             _installed = false;
             _page = null;
+            _requestFolder = _requestPage = null;
+            _discoveryVersion = -1;
+            _requestAttempted = false;
         }
     }
 
@@ -69,8 +93,10 @@ internal static class AnomalyTerminalHook
         Invoke(page.GetType(), page, "Refresh");
     }
 
-    static object RequestPageUnlocked()
+    static void FindRegistryUnlocked()
     {
+        if (_requestFolder != null || _requestPage != null)
+            return;
         Assembly[] assemblies;
         try
         {
@@ -78,7 +104,7 @@ internal static class AnomalyTerminalHook
         }
         catch
         {
-            return null;
+            return;
         }
 
         foreach (var assembly in assemblies)
@@ -96,25 +122,27 @@ internal static class AnomalyTerminalHook
                 continue;
             }
 
-            var requestFolder = FindStatic(registry, "RequestFolderPage", typeof(string), typeof(string));
-            var request = FindStatic(registry, "RequestPage", typeof(string));
-            if (requestFolder == null && request == null)
+            _requestFolder = FindStatic(registry, "RequestFolderPage", typeof(string), typeof(string));
+            _requestPage = FindStatic(registry, "RequestPage", typeof(string));
+            if (_requestFolder == null && _requestPage == null)
                 continue;
-
-            try
-            {
-                if (requestFolder != null)
-                    return requestFolder.Invoke(null, new object[] { FolderTitle, SettingsPage });
-                return request.Invoke(null, new object[] { PageTitle });
-            }
-            catch (Exception e)
-            {
-                DebugLog.Write("Anomaly RequestPage: " + e.GetType().Name + ": " + e.Message);
-                return null;
-            }
+            return;
         }
+    }
 
-        return null;
+    static object RequestPageUnlocked()
+    {
+        try
+        {
+            if (_requestFolder != null)
+                return _requestFolder.Invoke(null, new object[] { FolderTitle, SettingsPage });
+            return _requestPage?.Invoke(null, new object[] { PageTitle });
+        }
+        catch (Exception e)
+        {
+            DebugLog.Write("Anomaly RequestPage: " + e.GetType().Name + ": " + e.Message);
+            return null;
+        }
     }
 
     static void Populate(object page)

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="VRage.Math"><HintPath>$(Bin64)/VRage.Math.dll</HintPath></Reference>
+    <Compile Include="RenderingRegression.cs" />
+    <Compile Include="../ClientPlugin/Frs/Jitter.cs" Link="Jitter.cs" />
+    <Compile Include="../ClientPlugin/Frs/AnomalyHook.cs" Link="AnomalyHook.cs" />
+    <Compile Include="../ClientPlugin/Frs/AssemblyDiscovery.cs" Link="AssemblyDiscovery.cs" />
+    <Compile Include="../ClientPlugin/Frs/PeerAntiAliasing.cs" Link="PeerAntiAliasing.cs" />
+    <Compile Include="../ClientPlugin/Frs/FrsMode.cs" Link="FrsMode.cs" />
+    <Compile Include="../ClientPlugin/Frs/AntiAliasingChoice.cs" Link="AntiAliasingChoice.cs" />
+    <Compile Include="../ClientPlugin/Patches/ToneMappingPatch.cs" Link="ToneMappingPatch.cs" />
+    <Compile Include="../ClientPlugin/RichHud/AnomalyTerminalHook.cs" Link="AnomalyTerminalHook.cs" />
+  </ItemGroup>
+  <Target Name="VerifyGameMath" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(Bin64)/VRage.Math.dll')" Text="Set Bin64 in Directory.Build.props.user or pass -p:Bin64=path-to-game-Bin64." />
+  </Target>
+</Project>
