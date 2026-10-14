@@ -87,10 +87,10 @@ public class Config : INotifyPropertyChanged
     {
         string text;
         if (AnomalyRenderer.AllowDx11Device)
-            text = Dx11Bridge.Call<string>("StatusText");
+            text = Dx11Bridge.StatusText;
         else
             text = VulkanStatus.CurrentText;
-        MyGuiSandbox.AddScreen(new StatusScreen(text ?? ""));
+        MyGuiSandbox.AddScreen(new StatusScreen(PluginStatusPage.RendererLine + "\n" + (text ?? "No diagnostic report available")));
     }
 
     #endregion

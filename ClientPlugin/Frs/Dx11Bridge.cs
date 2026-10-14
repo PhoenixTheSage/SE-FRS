@@ -12,25 +12,43 @@ static class Dx11Bridge
 {
     static Type entry;
     static bool failed;
+    static string lastError;
+    static readonly object Gate = new();
+
+    public static string StatusText => Call<string>("StatusText") ??
+        "FRS DX11 is unavailable.\n" + (lastError ?? "Waiting for the DX11 companion.") +
+        "\nRenderer: " + AnomalyRenderer.ActiveName;
 
     public static void Ensure()
     {
-        if (entry != null || !AnomalyRenderer.AllowDx11Device)
+        lock (Gate)
+            EnsureLocked();
+    }
+
+    static void EnsureLocked()
+    {
+        if (entry != null || failed || !AnomalyRenderer.AllowDx11Device)
             return;
         string path = Resolve("SpaceEngineersFRS.Dx11.dll");
         if (!File.Exists(path))
         {
-            VRage.Utils.MyLog.Default.WriteLine("FRS: DX11 satellite missing at " + path);
+            var message = "DX11 satellite missing at " + path;
+            if (lastError != message)
+                VRage.Utils.MyLog.Default.WriteLine("FRS: " + message);
+            lastError = message;
             return;
         }
         try
         {
-            entry = Assembly.LoadFrom(path).GetType("ClientPlugin.Frs.Dx11Entry");
+            entry = SatelliteAssembly.Load(path, typeof(Dx11Bridge).Assembly).GetType("ClientPlugin.Frs.Dx11Entry", true);
+            lastError = null;
             VRage.Utils.MyLog.Default.WriteLine("FRS: DX11 satellite " + path);
         }
         catch (Exception e)
         {
-            VRage.Utils.MyLog.Default.WriteLine("FRS: DX11 satellite failed at " + path + ": " + e.GetType().Name);
+            lastError = "DX11 satellite failed at " + path + ": " + e.GetBaseException();
+            failed = true;
+            VRage.Utils.MyLog.Default.WriteLine("FRS: " + lastError);
         }
     }
 
@@ -57,7 +75,7 @@ static class Dx11Bridge
         get
         {
             Ensure();
-            return entry != null;
+            return AnomalyRenderer.AllowDx11Device && entry != null && !failed;
         }
     }
 
@@ -74,17 +92,21 @@ static class Dx11Bridge
 
     static object Invoke(string name, object[] args)
     {
-        if (failed)
+        if (failed || !AnomalyRenderer.AllowDx11Device)
             return null;
         Ensure();
         try
         {
-            return entry?.GetMethod(name)?.Invoke(null, args == null || args.Length == 0 ? null : args);
+            if (entry == null)
+                return null;
+            var method = entry.GetMethod(name) ?? throw new MissingMethodException(entry.FullName, name);
+            return method.Invoke(null, args == null || args.Length == 0 ? null : args);
         }
         catch (Exception e)
         {
             failed = true;
             var root = e.GetBaseException();
+            lastError = "DX11 " + name + " failed: " + root;
             VRage.Utils.MyLog.Default.WriteLine("FRS: DX11 " + name +
                                             " failed; satellite disabled this session: " +
                                             root.GetType().Name + ": " + root.Message);

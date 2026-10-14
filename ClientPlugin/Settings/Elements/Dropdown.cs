@@ -37,8 +37,16 @@ internal class DropdownAttribute(
         var dropdown = new MyGuiControlCombobox(openAreaItemsCount: VisibleRows, toolTip: Description);
         var elements = Enum.GetNames(choiceEnum);
 
-        if (choiceEnum == typeof(AntiAliasingChoice) && AnomalyRenderer.AllowDx11Device && Dx11Bridge.Ready)
-            Dx11Bridge.Call("FillCombo", dropdown);
+        if (choiceEnum == typeof(AntiAliasingChoice) && AnomalyRenderer.AllowDx11Device)
+        {
+            if (!Dx11Bridge.Ready || !Dx11Bridge.Call<bool>("FillCombo", dropdown))
+            {
+                dropdown.ClearItems();
+                dropdown.AddItem((long)AntiAliasingChoice.Off, "Off");
+                dropdown.AddItem((long)AntiAliasingChoice.FXAA, "FXAA");
+                dropdown.SelectItemByKey(selectedEnum is AntiAliasingChoice.FXAA ? 1 : 0, false);
+            }
+        }
         else
         {
             for (var i = 0; i < elements.Length; i++)

@@ -45,7 +45,12 @@ The code fails closed on FSR 2 error codes and defaults to off.
 - Visual Studio 2022 with Desktop C++ (for `amd_frs.dll`)
 - Build `Native` first, then `ClientPlugin` (deploys to Pulsar `Legacy\Local` or `Interim\Local`; close the game if the DLL is in use)
 
+The shared project also builds the matching `*.Dx11.dll` for each Windows runtime
+and deploys the pair. Pulsar `-sources` uses that companion with the live compiled
+plugin's settings. Linux builds only the shared Vulkan guest plugin.
+
 Debug with Pulsar `Legacy.exe` / `Interim.exe` and `-sources`.
+Initialization regression commands: [Tests/DX11-INITIALIZATION.md](Tests/DX11-INITIALIZATION.md).
 
 ## License
 

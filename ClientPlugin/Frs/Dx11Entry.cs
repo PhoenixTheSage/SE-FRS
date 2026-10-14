@@ -17,6 +17,7 @@ public static class Dx11Entry
     static bool routed;
     static bool defaultsAdded;
     static bool failed;
+    static string initializationError;
 
     public static void OnUpdate()
     {
@@ -47,6 +48,7 @@ public static class Dx11Entry
         {
             failed = true;
             var root = e.GetBaseException();
+            initializationError = root.ToString();
             MyLog.Default.Error("FRS DX11 update failed; device path disabled this session: " +
                                 root.GetType().Name + ": " + root.Message);
         }
@@ -71,11 +73,13 @@ public static class Dx11Entry
 
     public static string StatusText()
     {
+        if (failed)
+            return "FRS DX11 initialization failed:\n" + initializationError;
         GpuSupport.TryProbe();
         return FrsStatus.CurrentText;
     }
 
-    public static bool CanOffer() => GpuSupport.CanOfferFrs;
+    public static bool CanOffer() => !failed && GpuSupport.CanOfferFrs;
 
     public static bool DenyFrs() => GpuSupport.Probed && !GpuSupport.CanOfferFrs;
 
@@ -91,7 +95,13 @@ public static class Dx11Entry
 
     public static void ApplyFromUi(AntiAliasingChoice choice) => GameAntiAliasing.ApplyFromUi(choice);
 
-    public static void FillCombo(object combo) => GameAntiAliasing.FillAndBindPluginCombo(combo as MyGuiControlCombobox);
+    public static bool FillCombo(object combo)
+    {
+        if (combo is not MyGuiControlCombobox control)
+            return false;
+        GameAntiAliasing.FillAndBindPluginCombo(control);
+        return true;
+    }
 
     static void EnsurePaths()
     {

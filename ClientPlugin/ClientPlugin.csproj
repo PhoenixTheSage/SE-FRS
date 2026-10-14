@@ -23,8 +23,8 @@
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 
     <!-- Default versions; overridden by Version.Build.props  -->
-    <AssemblyVersion>1.6.0.0</AssemblyVersion>
-    <FileVersion>1.6.0.0</FileVersion>
+    <AssemblyVersion>1.6.1.0</AssemblyVersion>
+    <FileVersion>1.6.1.0</FileVersion>
     <PathSeparator Condition="$([MSBuild]::IsOSPlatform('Windows'))">\</PathSeparator>
     <PathSeparator Condition="!$([MSBuild]::IsOSPlatform('Windows'))">/</PathSeparator>
 
@@ -291,10 +291,6 @@
   <ItemGroup>
     <PackageReference Include="Lib.Harmony" Version="2.4.2" />
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
-    <PackageReference Include="Krafs.Publicizer" Version="2.3.0">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
   </ItemGroup>
 
 
@@ -305,7 +301,17 @@
           Command="sh &quot;$(RepoRoot)verify_props.sh&quot; &quot;$(Bin64)&quot;" />
   </Target>
 
-  <Target Name="DeployPlugin" AfterTargets="Build" Condition="'$(RunPostBuildEvent)' != 'Never' AND '$(TargetFramework)' != ''">
+  <!-- Build the device companion after its shared dependency, once per Windows runtime. -->
+  <Target Name="BuildDx11Satellite" AfterTargets="Build" BeforeTargets="DeployPlugin"
+          Condition="$([MSBuild]::IsOSPlatform('Windows')) AND '$(TargetFramework)' != '' AND '$(SkipDx11Satellite)' != 'true'">
+    <MSBuild Projects="$(MSBuildProjectDirectory)/ClientPlugin.Dx11.csproj" Targets="Restore"
+             RemoveProperties="TargetFramework;TargetFrameworks"
+             Properties="SkipDx11Satellite=true;RunPostBuildEvent=Never" />
+    <MSBuild Projects="$(MSBuildProjectDirectory)/ClientPlugin.Dx11.csproj" Targets="Build"
+             Properties="Configuration=$(Configuration);TargetFramework=$(TargetFramework);BuildProjectReferences=false;SkipDx11Satellite=true;RunPostBuildEvent=Never;Dx11BuildPass=true" />
+  </Target>
+
+  <Target Name="DeployPlugin" AfterTargets="Build" DependsOnTargets="BuildDx11Satellite" Condition="'$(RunPostBuildEvent)' != 'Never' AND '$(TargetFramework)' != ''">
     <PropertyGroup>
       <DeploySourceDir>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\$(OutputPath)').TrimEnd('\'))</DeploySourceDir>
     </PropertyGroup>

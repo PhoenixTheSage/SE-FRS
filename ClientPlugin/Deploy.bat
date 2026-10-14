@@ -75,10 +75,22 @@ if /i "%EDITION%"=="Interim" (
 if not exist "!PLUGIN_DIR!" mkdir "!PLUGIN_DIR!"
 
 :copy
+REM The Windows device companion is required even while the selected renderer is Vulkan.
+set "SATELLITE=%NAME:.dll=.Dx11.dll%"
+if not exist "%SOURCE%\%SATELLITE%" (
+    echo error : DX11 companion not found: %SOURCE%\%SATELLITE%. Build ClientPlugin before deploying.
+    exit /b 1
+)
 echo Copying "%SRCFILE%" to "!PLUGIN_DIR!\"
 copy /y "%SRCFILE%" "!PLUGIN_DIR!\"
 if !ERRORLEVEL! NEQ 0 (
     echo error : Could not copy "%NAME%", make sure the game does not run and try again.
+    exit /b 1
+)
+
+copy /y "%SOURCE%\%SATELLITE%" "!PLUGIN_DIR!\" >nul
+if !ERRORLEVEL! NEQ 0 (
+    echo error : Could not copy "%SATELLITE%", make sure the game does not run and try again.
     exit /b 1
 )
 

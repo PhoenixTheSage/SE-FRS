@@ -1,7 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
+    <Version>1.6.1</Version>
+    <AssemblyVersion>1.6.1.0</AssemblyVersion>
+    <FileVersion>1.6.1.0</FileVersion>
+    <TargetFrameworks Condition="'$(MSBuildRuntimeType)' == 'Core'">net48;net10.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(MSBuildRuntimeType)' != 'Core'">net48</TargetFrameworks>
     <OutputType>Library</OutputType>
+    <PlatformTarget>x64</PlatformTarget>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>ClientPlugin</RootNamespace>
     <AssemblyName>SpaceEngineersFRS.Dx11</AssemblyName>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
@@ -13,7 +19,7 @@
     <Bin64Dir>$(Bin64)\</Bin64Dir>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="ClientPlugin.csproj" />
+    <ProjectReference Include="ClientPlugin.csproj" AdditionalProperties="SkipDx11Satellite=true;RunPostBuildEvent=Never" />
     <Compile Include="Frs\Dx11Entry.cs" />
     <Compile Include="Frs\AnomalyHook.cs" />
     <Compile Include="Frs\FrsD3d.cs" />
@@ -56,4 +62,14 @@
     <Reference Include="SharpDX.Direct3D11"><HintPath>$(Bin64Dir)SharpDX.Direct3D11.dll</HintPath><Private>False</Private></Reference>
     <Reference Include="SharpDX.DXGI"><HintPath>$(Bin64Dir)SharpDX.DXGI.dll</HintPath><Private>False</Private></Reference>
   </ItemGroup>
+  <!-- Publicizer 2.3 can emit an empty assembly name when the input was already
+       publicized. CoreCLR rejects that attribute during JIT access checks. -->
+  <Target Name="DeclareDeviceAccess" AfterTargets="PublicizeAssemblies" BeforeTargets="GenerateAssemblyInfo">
+    <ItemGroup>
+      <AssemblyAttribute Remove="System.Runtime.CompilerServices.IgnoresAccessChecksToAttribute" />
+      <AssemblyAttribute Include="System.Runtime.CompilerServices.IgnoresAccessChecksToAttribute">
+        <_Parameter1>%(Publicize.Identity)</_Parameter1>
+      </AssemblyAttribute>
+    </ItemGroup>
+  </Target>
 </Project>

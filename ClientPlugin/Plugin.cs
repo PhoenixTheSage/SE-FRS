@@ -12,8 +12,8 @@ using VRage.Utils;
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("SpaceEngineersFRS.Dx11")]
 
 #if !LOCAL_BUILD
-[assembly: AssemblyVersion("1.6.0.0")]
-[assembly: AssemblyFileVersion("1.6.0.0")]
+[assembly: AssemblyVersion("1.6.1.0")]
+[assembly: AssemblyFileVersion("1.6.1.0")]
 #endif
 
 namespace ClientPlugin;
@@ -51,6 +51,7 @@ public sealed class Plugin : IPlugin
             Dx11Bridge.Call("OnDispose");
         ConfigStorage.FlushPending(true);
         AnomalyTerminalHook.Reset();
+        SatelliteAssembly.Reset();
         settingsGenerator = null;
         if (ReferenceEquals(Instance, this))
             Instance = null;
@@ -59,6 +60,7 @@ public sealed class Plugin : IPlugin
 
     public void Update()
     {
+        PluginStatusPage.TryInstall("FRS", Config.ShowStatus);
         if (disposed)
             return;
         AnomalyTerminalHook.TryInstall();

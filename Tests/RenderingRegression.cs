@@ -178,7 +178,7 @@ namespace VRageRender
     public class Context { public void ClearState() { } }
     public static class MyToneMapping { public static void Run() { } }
 }
-namespace VRage.Utils { public class MyLog { public static MyLog Default=new();public void WriteLine(string s) { }public void Warning(string s) { } } }
+namespace VRage.Utils { public class MyLog { public static MyLog Default=new();public void WriteLine(string s) { }public void Warning(string s) { }public void Error(string s) { } } }
 namespace ClientPlugin.Frs
 {
     public static class FrsRuntime

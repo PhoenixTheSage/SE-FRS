@@ -162,9 +162,6 @@ internal static class AnomalyTerminalHook
             (Action<float>)RichHudOptions.SetSharpness,
             "RCAS sharpening applied after upscale. 0 is off.",
             0.05f);
-        Invoke(type, page, "Button", "Show Status",
-            (Action)RichHudOptions.ShowStatus,
-            "GPU, FRS support, resolutions, and Anomaly buffer status");
     }
 
     static void Invoke(Type type, object instance, string name, params object[] args)
