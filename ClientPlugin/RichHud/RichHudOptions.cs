@@ -8,12 +8,20 @@ namespace ClientPlugin.RichHud;
 /// </summary>
 internal static class RichHudOptions
 {
-    public static AntiAliasingChoice GetAntiAliasing() =>
-        GameAntiAliasing.DisplayedChoice(Config.Current.AntiAliasing);
+    public static AntiAliasingChoice GetAntiAliasing()
+    {
+        var choice = Config.Current.AntiAliasing;
+        return AnomalyRenderer.AllowDx11Device
+            ? Dx11Bridge.Call<AntiAliasingChoice>("DisplayedChoice", choice)
+            : choice;
+    }
 
     public static void SetAntiAliasing(AntiAliasingChoice value)
     {
-        GameAntiAliasing.ApplyFromUi(value);
+        if (AnomalyRenderer.AllowDx11Device)
+            Dx11Bridge.Call("ApplyFromUi", value);
+        else
+            Config.Current.AntiAliasing = value;
     }
 
     public static FrsMode GetMode() => Config.Current.Mode;

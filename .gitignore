@@ -368,6 +368,8 @@ MigrationBackup/
 *.il
 Assets/amd_frs.dll
 Assets/amd_frs.pdb
+Assets/amd_fidelityfx_vk.dll
+Assets/amd_fidelityfx_vk.pdb
 Native/build/
 Native/bin/
 

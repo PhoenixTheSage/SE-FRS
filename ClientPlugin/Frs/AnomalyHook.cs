@@ -134,7 +134,27 @@ internal static class AnomalyHook
         }
     }
 
+    static bool _probeFailed;
+
     public static void Probe()
+    {
+        if (_probeFailed)
+            return;
+        try
+        {
+            ProbeBody();
+        }
+        catch (Exception e)
+        {
+            _probeFailed = true;
+            var root = e.GetBaseException();
+            MyLog.Default.Error("FRS: Anomaly probe failed this session: " +
+                                root.GetType().Name + ": " + root.Message);
+        }
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    static void ProbeBody()
     {
         lock (Gate)
         {
@@ -769,6 +789,8 @@ internal static class AnomalyHook
 
     private static void TryClaimUpscaleUnlocked()
     {
+        if (!AnomalyRenderer.AllowDx11Device)
+            return;
         if (_claimedUpscale || _claimUpscale == null)
             return;
         try

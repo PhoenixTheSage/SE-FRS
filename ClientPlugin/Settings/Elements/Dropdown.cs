@@ -37,8 +37,8 @@ internal class DropdownAttribute(
         var dropdown = new MyGuiControlCombobox(openAreaItemsCount: VisibleRows, toolTip: Description);
         var elements = Enum.GetNames(choiceEnum);
 
-        if (choiceEnum == typeof(AntiAliasingChoice))
-            GameAntiAliasing.FillAndBindPluginCombo(dropdown);
+        if (choiceEnum == typeof(AntiAliasingChoice) && AnomalyRenderer.AllowDx11Device && Dx11Bridge.Ready)
+            Dx11Bridge.Call("FillCombo", dropdown);
         else
         {
             for (var i = 0; i < elements.Length; i++)

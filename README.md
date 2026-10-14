@@ -2,7 +2,7 @@
 
 Pulsar client plugin that adds **AMD FidelityFX Super Resolution** (branded **FRS**) and **NativeAA** to Space Engineers 1 (DX11). Frame Generation is not supported.
 
-The native host is **FSR 2.2.1** plus AMD's official DX11 backend (MIT). FSR 3.1 / FSR 4 in the current FidelityFX SDK target DX12 and Vulkan, so they cannot run on Space Engineers' D3D11 device. FSR 2.2.1 is the latest fully open-source AMD temporal upscaler that does.
+The DX11 host is **FSR 2.2.1** plus AMD's official DX11 backend (MIT). That is the newest FSR with a D3D11 backend. On Vulkan the renderer loads `amd_fidelityfx_vk.dll` / `libamd_fidelityfx_vk.so` from FidelityFX SDK 1.1.4 and evaluates **FSR 3.1.4**. FSR 4 is not used: SDK 2.x dropped the Vulkan backend. Linux uses that same 3.1.4 library, which is newer than the DX11 host. The renderer temporal upscale remains the fallback when the library is absent.
 
 Settings live in the Pulsar plugin dialog. When [Anomaly Shader Framework](https://github.com/PhoenixTheSage/Anomaly) and [Rich HUD Master](https://steamcommunity.com/workshop/filedetails/?id=1965654081) are in the world, the same options appear under **Anomaly Shaders → FRS → Settings**. This plugin does not vendor a Rich HUD client.
 

@@ -13,17 +13,47 @@ public static class AntiAliasingHandshake
     public const string ChoiceFrs = "FRS";
     public const long GraphicsComboKey = 101;
 
-    public static bool CanOffer() => GpuSupport.CanOfferFrs;
+    public static bool CanOffer() =>
+        AnomalyRenderer.AllowGuestWork || Dx11Bridge.Call<bool>("CanOffer");
 
     public static string GetChoice()
     {
         var config = Config.Current;
         var choice = config == null ? AntiAliasingChoice.Off : config.AntiAliasing;
-        return GameAntiAliasing.ChoiceName(GameAntiAliasing.DisplayedChoice(choice));
+        if (!AnomalyRenderer.AllowDx11Device)
+            return ChoiceName(choice);
+        var displayed = Dx11Bridge.Call<AntiAliasingChoice>("DisplayedChoice", choice);
+        return Dx11Bridge.Call<string>("ChoiceName", displayed) ?? ChoiceName(choice);
     }
 
     public static void ApplyChoice(string choice)
     {
-        GameAntiAliasing.ApplyFromPeer(choice);
+        if (AnomalyRenderer.AllowDx11Device)
+        {
+            Dx11Bridge.Call("ApplyFromPeer", choice);
+            return;
+        }
+        if (Config.Current == null)
+            return;
+        Config.Current.AntiAliasing = FromName(choice);
+    }
+
+    static string ChoiceName(AntiAliasingChoice choice)
+    {
+        switch (choice)
+        {
+            case AntiAliasingChoice.FXAA: return ChoiceFxaa;
+            case AntiAliasingChoice.DLSS: return ChoiceDlss;
+            case AntiAliasingChoice.FRS: return ChoiceFrs;
+            default: return ChoiceOff;
+        }
+    }
+
+    static AntiAliasingChoice FromName(string name)
+    {
+        if (name == ChoiceDlss) return AntiAliasingChoice.DLSS;
+        if (name == ChoiceFrs) return AntiAliasingChoice.FRS;
+        if (name == ChoiceFxaa) return AntiAliasingChoice.FXAA;
+        return AntiAliasingChoice.Off;
     }
 }

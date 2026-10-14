@@ -34,7 +34,7 @@ public class Config : INotifyPropertyChanged
         get => antiAliasing;
         set
         {
-            if (value == AntiAliasingChoice.FRS && GpuSupport.Probed && !GpuSupport.CanOfferFrs)
+            if (value == AntiAliasingChoice.FRS && Dx11Bridge.Call<bool>("DenyFrs"))
                 value = AntiAliasingChoice.Off;
             SetField(ref antiAliasing, value);
         }
@@ -85,8 +85,12 @@ public class Config : INotifyPropertyChanged
     // ReSharper disable once UnusedMember.Global
     public static void ShowStatus()
     {
-        GpuSupport.TryProbe();
-        MyGuiSandbox.AddScreen(new StatusScreen(FrsStatus.CurrentText));
+        string text;
+        if (AnomalyRenderer.AllowDx11Device)
+            text = Dx11Bridge.Call<string>("StatusText");
+        else
+            text = VulkanStatus.CurrentText;
+        MyGuiSandbox.AddScreen(new StatusScreen(text ?? ""));
     }
 
     #endregion
@@ -107,10 +111,10 @@ public class Config : INotifyPropertyChanged
         {
             DebugLog.Write("config " + propertyName + " aa=" + antiAliasing + " mode=" + mode +
                            " sharpness=" + sharpness);
-            FrsRuntime.NotifyConfigChanged();
+            Dx11Bridge.Call("NotifyConfigChanged");
         }
         if (propertyName == nameof(AntiAliasing) && !SuppressApply)
-            GameAntiAliasing.ApplyFromConfig();
+            Dx11Bridge.Call("ApplyFromConfig");
     }
 
     private void SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = null)

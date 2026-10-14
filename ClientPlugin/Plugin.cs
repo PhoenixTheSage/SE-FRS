@@ -1,20 +1,19 @@
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using ClientPlugin.Frs;
-using ClientPlugin.Patches;
 using ClientPlugin.RichHud;
 using ClientPlugin.Settings;
 using ClientPlugin.Settings.Layouts;
-using HarmonyLib;
 using Sandbox.Graphics.GUI;
 using VRage.Plugins;
 using VRage.Utils;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("SpaceEngineersFRS.Dx11")]
+
 #if !LOCAL_BUILD
-[assembly: AssemblyVersion("1.5.1.0")]
-[assembly: AssemblyFileVersion("1.5.1.0")]
+[assembly: AssemblyVersion("1.6.0.0")]
+[assembly: AssemblyFileVersion("1.6.0.0")]
 #endif
 
 namespace ClientPlugin;
@@ -24,10 +23,9 @@ public sealed class Plugin : IPlugin
 {
     public const string Name = "SpaceEngineersFRS";
     public static Plugin Instance { get; private set; }
+    internal static readonly List<string> SearchPaths = new List<string>();
 
     private SettingsGenerator settingsGenerator;
-    private Harmony harmony;
-    private Harmony deviceHarmony;
     private bool disposed;
 
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
@@ -37,44 +35,22 @@ public sealed class Plugin : IPlugin
         Instance = this;
         settingsGenerator = new SettingsGenerator();
         DebugLog.Open();
-        AddDefaultSearchPaths();
-        DebugLog.Write("Init search=" + FrsHost.SearchPathSummary());
-
-        GpuSupport.TryProbe();
-        GameAntiAliasing.CoerceUnsupported();
-        AnomalyHook.Probe();
         AnomalyTerminalHook.TryInstall();
-
-        harmony = new Harmony(Name);
-        harmony.PatchAll(Assembly.GetExecutingAssembly());
-        deviceHarmony = new Harmony(DeviceDisposePatch.HarmonyId);
-        DeviceDisposePatch.Apply(deviceHarmony);
-        AnomalyHook.Probe();
-        AnomalyHook.ClaimUpscale();
-        AnomalyTerminalHook.TryInstall();
-        MyLog.Default.WriteLine("FRS plugin initialized. GPU: " + GpuSupport.StatusLine);
-        DebugLog.Write("Harmony patched, plugin initialized GPU=" + GpuSupport.StatusLine);
+        if (AnomalyRenderer.Decided && !AnomalyRenderer.AllowDx11Device)
+            MyLog.Default.WriteLine(ClosedRoute("FRS"));
     }
 
     public void Dispose()
     {
         if (disposed)
             return;
-
         disposed = true;
         DebugLog.Write("Dispose");
-        GameAntiAliasing.Reset();
         PeerAntiAliasing.Reset();
-        BillboardOutputPass.Reset();
-        harmony = null;
-        // Leave Harmony patches in place. Pulsar only disposes plugins at
-        // process exit; UnpatchAll rewrites shared trampolines while other
-        // plugins may still be running. DeviceDisposePatch stays applied so
-        // FRS can shut down when the D3D device is released.
+        if (AnomalyRenderer.AllowDx11Device)
+            Dx11Bridge.Call("OnDispose");
         ConfigStorage.FlushPending(true);
-        FrsRuntime.Shutdown();
         AnomalyTerminalHook.Reset();
-        GpuSupport.Reset();
         settingsGenerator = null;
         if (ReferenceEquals(Instance, this))
             Instance = null;
@@ -85,77 +61,76 @@ public sealed class Plugin : IPlugin
     {
         if (disposed)
             return;
-        // Pulsar finishes every plugin Init before the first Update. FRS D3D11
-        // init must not overlap Anomaly (or other plugins) Harmony.PatchAll.
-        GameAntiAliasing.AlignWithPeer();
         AnomalyTerminalHook.TryInstall();
         ConfigStorage.FlushPending();
-        ForeignUpscalerDrsPatch.TryApply(harmony);
-        FrsRuntime.NotifyPluginsReady();
+        RequestRenderer(4, AnomalyRenderer.AllowGuestWork && Config.Current.Enabled);
+        if (AnomalyRenderer.AllowGuestWork)
+            FsrVulkan.Publish(Config.Current.Enabled, Config.Current.Mode, Config.Current.Sharpness, SearchPaths);
+        if (!AnomalyRenderer.AllowDx11Device)
+        {
+            if (AnomalyRenderer.AllowGuestWork)
+                VulkanStatus.Sync(Config.Current.Enabled);
+            return;
+        }
+        Dx11Bridge.Call("OnUpdate");
     }
 
-    // ReSharper disable once UnusedMember.Global
     public void OpenConfigDialog()
     {
         var generator = settingsGenerator;
         if (disposed || generator == null)
             return;
-
-        GpuSupport.TryProbe();
-        GameAntiAliasing.AlignConfigWithGame();
-        GameAntiAliasing.AlignWithPeer();
+        if (AnomalyRenderer.AllowDx11Device)
+            Dx11Bridge.Call("PrepareConfig");
         generator.SetLayout<Simple>();
         generator.Dialog.RecreateControls(true);
         MyGuiSandbox.AddScreen(generator.Dialog);
     }
 
-    // ReSharper disable once UnusedMember.Global
     public void LoadAssets(IReadOnlyDictionary<string, string> assets)
     {
         if (disposed || assets == null)
             return;
-
         foreach (var pair in assets)
             AddAssetSearchPath(pair.Value, pair.Key);
         AnomalyTerminalHook.TryInstall();
     }
 
-    // Older Pulsar still calls this when an asset is named AssetFolder.
-    // ReSharper disable once UnusedMember.Global
-    public void LoadAssets(string folder)
+    public void LoadAssets(string folder) => AddAssetSearchPath(folder, null);
+
+    static void RequestRenderer(int bit, bool enabled)
     {
-        AddAssetSearchPath(folder, null);
+        if (!AnomalyRenderer.AllowGuestWork)
+            return;
+        foreach (var assembly in System.AppDomain.CurrentDomain.GetAssemblies())
+        {
+            var type = assembly.GetType("ClientPlugin.Shaders.DisplayServices", false);
+            if (type == null)
+                continue;
+            type.GetMethod(enabled ? "Request" : "Release")?.Invoke(null, new object[] { bit });
+            return;
+        }
     }
 
-    private void AddAssetSearchPath(string path, string name)
+    static string ClosedRoute(string name) =>
+        AnomalyRenderer.LinuxRequiresGuest
+            ? name + ": Linux stays idle until Anomaly's Vulkan guest bus is open"
+            : AnomalyRenderer.AllowGuestWork
+                ? name + ": Vulkan evaluates FSR 3.1 when amd_fidelityfx_vk.dll is next to the plugin. The renderer temporal upscale stays the fallback."
+                : name + ": DX11 device path closed (" + AnomalyRenderer.ActiveName + ")";
+
+    void AddAssetSearchPath(string path, string name)
     {
         if (disposed || string.IsNullOrEmpty(path))
             return;
-
         if (File.Exists(path))
             path = Path.GetDirectoryName(path);
-
-        FrsHost.AddSearchPath(path);
+        if (!string.IsNullOrEmpty(path))
+            SearchPaths.Add(path);
+        if (AnomalyRenderer.AllowDx11Device)
+            Dx11Bridge.Call("AddSearchPath", path);
         var label = string.IsNullOrEmpty(name) ? path : name + "=" + path;
         MyLog.Default.WriteLine("FRS asset: " + label);
         DebugLog.Write("LoadAssets " + label);
-    }
-
-    static void AddDefaultSearchPaths()
-    {
-        FrsHost.AddSearchPath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
-        try
-        {
-            var pulsar = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule?.FileName);
-            if (string.IsNullOrEmpty(pulsar))
-                return;
-            FrsHost.AddSearchPath(Path.Combine(pulsar, "Legacy", "Local"));
-            FrsHost.AddSearchPath(Path.Combine(pulsar, "Interim", "Local"));
-            FrsHost.AddSearchPath(Path.Combine(pulsar, "Local"));
-        }
-        catch
-        {
-            // ignored
-        }
     }
 }

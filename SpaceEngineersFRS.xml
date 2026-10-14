@@ -24,7 +24,7 @@ Compat: Certain rendering mods may not play nice until they use Anomaly.
            Sha256="1e930d82fbb7dfe9590078b63bb1bd20537aef31225873cef88653c6a75031ff"
            Placement="Bin" />
 
-    <Platforms>Windows</Platforms>
+    <Platforms>Windows,Linux</Platforms>
 
     <!-- Do not list Master or Anomaly here. Anomaly is detected at runtime. -->
 
