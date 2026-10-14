@@ -135,7 +135,7 @@ public static class RenderingRegression
         Producer.PageReady=true;
         Set(typeof(AnomalyTerminalHook),"_lastRequestTick",unchecked(System.Environment.TickCount-1001));
         Assert(AnomalyTerminalHook.TryInstall() && Producer.PageRequests==2,"terminal installs when world becomes ready");
-        Assert(Producer.Page.Controls==4,"terminal keeps all settings controls");
+        Assert(Producer.Page.Controls==3 && Producer.Page.Buttons==0,"terminal keeps three settings controls and leaves diagnostics on Status");
         AnomalyHook.Reset(); PeerAntiAliasing.Reset(); AnomalyTerminalHook.Reset();
         AnomalyHook.Probe();
         Assert(AnomalyHook.RegistryFound && PeerAntiAliasing.Present && AnomalyTerminalHook.TryInstall(),"reset rediscovers already loaded plugins");
@@ -162,10 +162,11 @@ public class VelocityBuffer { public bool IsAvailable=>true;public IntPtr Native
 public class TestPage
 {
     public int Controls;
+    public int Buttons;
     public void Category(string label) { }
     public void Dropdown(string label,Type type,Func<object> getter,Action<object> setter,string description) { Controls++; }
     public void Slider(string label,float min,float max,Func<float> getter,Action<float> setter,string description,float step) { Controls++; }
-    public void Button(string label,Action action,string description) { Controls++; }
+    public void Button(string label,Action action,string description) { Controls++; Buttons++; }
     public void Refresh() { }
 }
 public class TestTexture:IBorrowedCustomTexture { public Vector2I Size=>new(1280,720); public void Release() { } }

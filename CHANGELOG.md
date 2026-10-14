@@ -2,6 +2,7 @@
 
 ## 1.6.1 — 2026-10-14
 
+- Update rendering/discovery regression coverage to require three settings controls and keep diagnostic buttons on the separate Status page.
 - Rebind the DX11 companion to the live shared core in Pulsar source mode and reset assembly resolution on disposal.
 - Serialize companion initialization, refuse device calls on pending/Vulkan routes, and retain readable missing-companion and invocation failures.
 - Build and deploy matching Windows companions with isolated intermediates; remove unnecessary shared Publicizer access and preserve explicit device access grants.
