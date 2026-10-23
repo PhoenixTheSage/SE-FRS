@@ -12,8 +12,8 @@ using VRage.Utils;
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("SpaceEngineersFRS.Dx11")]
 
 #if !LOCAL_BUILD
-[assembly: AssemblyVersion("1.6.1.0")]
-[assembly: AssemblyFileVersion("1.6.1.0")]
+[assembly: AssemblyVersion("1.6.2.0")]
+[assembly: AssemblyFileVersion("1.6.2.0")]
 #endif
 
 namespace ClientPlugin;
@@ -46,6 +46,12 @@ public sealed class Plugin : IPlugin
             return;
         disposed = true;
         DebugLog.Write("Dispose");
+        GraphicsAaHost.Reset();
+        if (AnomalyRenderer.AllowGuestWork)
+        {
+            FsrVulkan.Publish(false, Config.Current.Mode, Config.Current.Sharpness, SearchPaths);
+            VulkanStatus.Sync(false);
+        }
         PeerAntiAliasing.Reset();
         if (AnomalyRenderer.AllowDx11Device)
             Dx11Bridge.Call("OnDispose");
@@ -63,11 +69,15 @@ public sealed class Plugin : IPlugin
         PluginStatusPage.TryInstall("FRS", Config.ShowStatus);
         if (disposed)
             return;
+        GraphicsAaHost.TryInstall();
         AnomalyTerminalHook.TryInstall();
         ConfigStorage.FlushPending();
         RequestRenderer(4, AnomalyRenderer.AllowGuestWork && Config.Current.Enabled);
         if (AnomalyRenderer.AllowGuestWork)
+        {
+            GameAntiAliasing.AlignWithPeer();
             FsrVulkan.Publish(Config.Current.Enabled, Config.Current.Mode, Config.Current.Sharpness, SearchPaths);
+        }
         if (!AnomalyRenderer.AllowDx11Device)
         {
             if (AnomalyRenderer.AllowGuestWork)

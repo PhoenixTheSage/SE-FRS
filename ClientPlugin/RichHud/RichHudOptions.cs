@@ -13,7 +13,7 @@ internal static class RichHudOptions
         var choice = Config.Current.AntiAliasing;
         return AnomalyRenderer.AllowDx11Device
             ? Dx11Bridge.Call<AntiAliasingChoice>("DisplayedChoice", choice)
-            : choice;
+            : GameAntiAliasing.DisplayedChoice(choice);
     }
 
     public static void SetAntiAliasing(AntiAliasingChoice value)
@@ -21,7 +21,7 @@ internal static class RichHudOptions
         if (AnomalyRenderer.AllowDx11Device)
             Dx11Bridge.Call("ApplyFromUi", value);
         else
-            Config.Current.AntiAliasing = value;
+            GameAntiAliasing.ApplyFromUi(value);
     }
 
     public static FrsMode GetMode() => Config.Current.Mode;

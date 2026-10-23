@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFrameworks>net48;net10.0</TargetFrameworks><LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../ClientPlugin/Frs/GameAntiAliasing.cs" Link="Production/GameAntiAliasing.cs" />
+    <Compile Include="../../ClientPlugin/Frs/AntiAliasingChoice.cs" Link="Production/AntiAliasingChoice.cs" />
+  </ItemGroup>
+</Project>

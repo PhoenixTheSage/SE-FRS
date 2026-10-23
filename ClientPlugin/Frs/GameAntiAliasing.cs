@@ -51,7 +51,7 @@ internal static class GameAntiAliasing
 
     public static void BindGraphicsCombo(MyGuiControlCombobox combo)
     {
-        GpuSupport.TryProbe();
+
         if (!ReferenceEquals(_graphicsCombo, combo))
         {
             if (_graphicsCombo != null)
@@ -129,8 +129,8 @@ internal static class GameAntiAliasing
 
     public static void CoerceUnsupported()
     {
-        GpuSupport.TryProbe();
-        if (Config.Current.AntiAliasing != AntiAliasingChoice.FRS || GpuSupport.CanOfferFrs)
+
+        if (Config.Current.AntiAliasing != AntiAliasingChoice.FRS || AntiAliasingHandshake.CanOffer())
             return;
         SetChoice(AntiAliasingChoice.Off, applyGame: true, save: true);
     }
@@ -139,7 +139,7 @@ internal static class GameAntiAliasing
     {
         if (_peerSynced)
             return;
-        GpuSupport.TryProbe();
+
         var resolved = ResolveExclusive();
         var displayed = DisplayedChoice(Config.Current.AntiAliasing);
         if (displayed != resolved)
@@ -208,7 +208,7 @@ internal static class GameAntiAliasing
 
     public static AntiAliasingChoice DisplayedChoice(AntiAliasingChoice choice)
     {
-        if (choice == AntiAliasingChoice.FRS && !GpuSupport.CanOfferFrs)
+        if (choice == AntiAliasingChoice.FRS && !AntiAliasingHandshake.CanOffer())
             return AntiAliasingChoice.Off;
         if (choice == AntiAliasingChoice.DLSS && !(PeerAntiAliasing.Present && PeerAntiAliasing.CanOffer))
             return PeerAntiAliasing.Present ? AntiAliasingChoice.Off : choice;
@@ -272,7 +272,7 @@ internal static class GameAntiAliasing
 
     private static AntiAliasingChoice Sanitize(AntiAliasingChoice choice)
     {
-        if (choice == AntiAliasingChoice.FRS && !GpuSupport.CanOfferFrs)
+        if (choice == AntiAliasingChoice.FRS && !AntiAliasingHandshake.CanOffer())
             return AntiAliasingChoice.Off;
         if (choice == AntiAliasingChoice.DLSS && PeerAntiAliasing.Present && !PeerAntiAliasing.CanOffer)
             return AntiAliasingChoice.Off;
@@ -289,11 +289,11 @@ internal static class GameAntiAliasing
         if (dlssWanted && !(PeerAntiAliasing.Present && PeerAntiAliasing.CanOffer))
             dlssWanted = false;
         var frsWanted = own == AntiAliasingChoice.FRS || peer == AntiAliasingChoice.FRS;
-        if (frsWanted && !GpuSupport.CanOfferFrs)
+        if (frsWanted && !AntiAliasingHandshake.CanOffer())
             frsWanted = false;
 
         if (dlssWanted && frsWanted)
-            return GpuSupport.CanOfferFrs ? AntiAliasingChoice.FRS : AntiAliasingChoice.DLSS;
+            return AntiAliasingHandshake.CanOffer() ? AntiAliasingChoice.FRS : AntiAliasingChoice.DLSS;
         if (dlssWanted)
             return AntiAliasingChoice.DLSS;
         if (frsWanted)
@@ -326,13 +326,13 @@ internal static class GameAntiAliasing
         AddItem(combo, (long)AntiAliasingChoice.FXAA, "FXAA");
         if (PeerAntiAliasing.Present && PeerAntiAliasing.CanOffer)
             AddItem(combo, (long)AntiAliasingChoice.DLSS, "DLSS");
-        if (GpuSupport.CanOfferFrs)
+        if (AntiAliasingHandshake.CanOffer())
             AddItem(combo, (long)AntiAliasingChoice.FRS, "FRS");
     }
 
     private static void EnsureOwnGraphicsItem(MyGuiControlCombobox combo)
     {
-        if (combo == null || !GpuSupport.CanOfferFrs)
+        if (combo == null || !AntiAliasingHandshake.CanOffer())
             return;
         AddItem(combo, FrsComboKey, "FRS");
     }

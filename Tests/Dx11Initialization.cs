@@ -65,6 +65,13 @@ internal static class Dx11Initialization
                 Check(!AppDomain.CurrentDomain.GetAssemblies().Any(a => a.GetName().Name == name + ".Dx11"),
                     "route " + route + " never loads DX11 companion");
             }
+            var graphicsHost = core.GetType("ClientPlugin." + ns + ".GraphicsAaHost", true);
+            graphicsHost.GetMethod("TryInstall").Invoke(null, null);
+            Check(graphicsHost.GetField("harmony", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null) != null,
+                "shared Graphics AA hooks bind actual game methods on Vulkan");
+            graphicsHost.GetMethod("Reset").Invoke(null, null);
+            Check(!AppDomain.CurrentDomain.GetAssemblies().Any(a => a.GetName().Name == name + ".Dx11"),
+                "shared Graphics AA installation never loads DX11 companion");
             ClientPlugin.Backend.RendererRoute.Active = 1;
             var loader = core.GetType("ClientPlugin." + ns + ".SatelliteAssembly", true);
             var device = (Assembly)loader.GetMethod("Load", BindingFlags.NonPublic | BindingFlags.Static)

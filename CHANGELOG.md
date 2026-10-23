@@ -1,5 +1,12 @@
 # SE-FRS changelog
 
+## 1.6.2 — 2026-10-23
+
+- Share the game Graphics and plugin AA controller across renderers; Vulkan selections now apply native Off/FXAA settings and share the existing preview/cancel/commit behavior.
+- Route Pulsar and Rich HUD AA controls through the same controller, including capability filtering and DLSS peer synchronization.
+- Install Graphics UI hooks from the shared plugin and retain the device gate around the DX11 companion, including Pulsar's generated assembly identity.
+- Disable the Vulkan FSR request and release the named upscale claim on disposal. Add both-runtime controller regressions and real game-method hook checks; visible in-game/vendor acceptance remains separate.
+
 ## 1.6.1 — 2026-10-14
 
 - Update rendering/discovery regression coverage to require three settings controls and keep diagnostic buttons on the separate Status page.

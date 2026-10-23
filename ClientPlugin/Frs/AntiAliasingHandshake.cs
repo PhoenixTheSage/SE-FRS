@@ -21,7 +21,7 @@ public static class AntiAliasingHandshake
         var config = Config.Current;
         var choice = config == null ? AntiAliasingChoice.Off : config.AntiAliasing;
         if (!AnomalyRenderer.AllowDx11Device)
-            return ChoiceName(choice);
+            return GameAntiAliasing.ChoiceName(GameAntiAliasing.DisplayedChoice(choice));
         var displayed = Dx11Bridge.Call<AntiAliasingChoice>("DisplayedChoice", choice);
         return Dx11Bridge.Call<string>("ChoiceName", displayed) ?? ChoiceName(choice);
     }
@@ -35,7 +35,8 @@ public static class AntiAliasingHandshake
         }
         if (Config.Current == null)
             return;
-        Config.Current.AntiAliasing = FromName(choice);
+        if (AnomalyRenderer.AllowGuestWork) GameAntiAliasing.ApplyFromPeer(choice);
+        else Config.Current.AntiAliasing = FromName(choice);
     }
 
     static string ChoiceName(AntiAliasingChoice choice)

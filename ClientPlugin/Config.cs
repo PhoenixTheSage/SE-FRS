@@ -113,8 +113,11 @@ public class Config : INotifyPropertyChanged
                            " sharpness=" + sharpness);
             Dx11Bridge.Call("NotifyConfigChanged");
         }
-        if (propertyName == nameof(AntiAliasing) && !SuppressApply)
-            Dx11Bridge.Call("ApplyFromConfig");
+        if (propertyName == nameof(AntiAliasing) && !SuppressApply && Current != null)
+        {
+            if (AnomalyRenderer.AllowGuestWork) GameAntiAliasing.ApplyFromConfig();
+            else Dx11Bridge.Call("ApplyFromConfig");
+        }
     }
 
     private void SetField<T>(ref T field, T value, [CallerMemberName] string propertyName = null)

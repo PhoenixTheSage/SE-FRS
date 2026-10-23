@@ -23,8 +23,8 @@
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 
     <!-- Default versions; overridden by Version.Build.props  -->
-    <AssemblyVersion>1.6.1.0</AssemblyVersion>
-    <FileVersion>1.6.1.0</FileVersion>
+    <AssemblyVersion>1.6.2.0</AssemblyVersion>
+    <FileVersion>1.6.2.0</FileVersion>
     <PathSeparator Condition="$([MSBuild]::IsOSPlatform('Windows'))">\</PathSeparator>
     <PathSeparator Condition="!$([MSBuild]::IsOSPlatform('Windows'))">/</PathSeparator>
 
@@ -260,7 +260,6 @@
     <Compile Remove="Frs\FrsRuntime.cs" />
     <Compile Remove="Frs\FrsNative.cs" />
     <Compile Remove="Frs\GpuSupport.cs" />
-    <Compile Remove="Frs\GameAntiAliasing.cs" />
     <Compile Remove="Frs\Jitter.cs" />
     <Compile Remove="Frs\PersistentLdrTarget.cs" />
     <Compile Remove="Frs\PostPpHudSpace.cs" />
@@ -269,6 +268,7 @@
     <Compile Remove="Frs\RenderTraceBind.cs" />
     <Compile Remove="Frs\FrsStatus.cs" />
     <Compile Remove="Patches\**\*.cs" />
+    <Compile Include="Patches\GraphicsOptionsAaPatch.cs" />
     <Compile Remove="Tools\GameAssembliesToPublicize.cs" />
     <Reference Include="VRage.Scripting, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>$(Bin64Dir)VRage.Scripting.dll</HintPath>

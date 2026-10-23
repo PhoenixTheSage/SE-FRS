@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>1.6.1</Version>
-    <AssemblyVersion>1.6.1.0</AssemblyVersion>
-    <FileVersion>1.6.1.0</FileVersion>
+    <Version>1.6.2</Version>
+    <AssemblyVersion>1.6.2.0</AssemblyVersion>
+    <FileVersion>1.6.2.0</FileVersion>
     <TargetFrameworks Condition="'$(MSBuildRuntimeType)' == 'Core'">net48;net10.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(MSBuildRuntimeType)' != 'Core'">net48</TargetFrameworks>
     <OutputType>Library</OutputType>
@@ -27,7 +27,6 @@
     <Compile Include="Frs\FrsRuntime.cs" />
     <Compile Include="Frs\FrsNative.cs" />
     <Compile Include="Frs\GpuSupport.cs" />
-    <Compile Include="Frs\GameAntiAliasing.cs" />
     <Compile Include="Frs\Jitter.cs" />
     <Compile Include="Frs\PersistentLdrTarget.cs" />
     <Compile Include="Frs\PostPpHudSpace.cs" />
@@ -35,7 +34,7 @@
     <Compile Include="Frs\VelocityAcceptance.cs" />
     <Compile Include="Frs\RenderTraceBind.cs" />
     <Compile Include="Frs\FrsStatus.cs" />
-    <Compile Include="Patches\**\*.cs" />
+    <Compile Include="Patches\**\*.cs" Exclude="Patches\GraphicsOptionsAaPatch.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Lib.Harmony" Version="2.4.2" />

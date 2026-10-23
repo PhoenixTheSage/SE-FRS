@@ -47,6 +47,8 @@ internal class DropdownAttribute(
                 dropdown.SelectItemByKey(selectedEnum is AntiAliasingChoice.FXAA ? 1 : 0, false);
             }
         }
+        else if (choiceEnum == typeof(AntiAliasingChoice))
+            GameAntiAliasing.FillAndBindPluginCombo(dropdown);
         else
         {
             for (var i = 0; i < elements.Length; i++)
