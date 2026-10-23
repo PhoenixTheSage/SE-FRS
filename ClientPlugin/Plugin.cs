@@ -49,6 +49,7 @@ public sealed class Plugin : IPlugin
         GraphicsAaHost.Reset();
         if (AnomalyRenderer.AllowGuestWork)
         {
+            RequestRenderer(4, false);
             FsrVulkan.Publish(false, Config.Current.Mode, Config.Current.Sharpness, SearchPaths);
             VulkanStatus.Sync(false);
         }
