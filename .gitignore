@@ -370,6 +370,7 @@ Assets/amd_frs.dll
 Assets/amd_frs.pdb
 Assets/amd_fidelityfx_vk.dll
 Assets/amd_fidelityfx_vk.pdb
+Assets/libamd_fidelityfx_vk.so
 Native/build/
 Native/bin/
 

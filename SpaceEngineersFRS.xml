@@ -24,6 +24,18 @@ Compat: Certain rendering mods may not play nice until they use Anomaly.
            Sha256="1e930d82fbb7dfe9590078b63bb1bd20537aef31225873cef88653c6a75031ff"
            Placement="Bin" />
 
+    <!-- AMD-signed FidelityFX SDK 1.1.4 Vulkan runtime (FSR 3.1.4) for the Vulkan path. -->
+    <Asset Name="AmdFidelityFxVk"
+           Url="https://github.com/PhoenixTheSage/SE-FRS/releases/download/fidelityfx-vk-1.1.4/amd_fidelityfx_vk.dll"
+           Sha256="a1624cc4238fef046f30c4d80ce3f47be63fc5f5373f49e3ee9edb9960f54c78"
+           Placement="Bin" />
+
+    <!-- Linux build of the same SDK 1.1.4 Vulkan runtime; see Native/third_party/FidelityFX-SDK-1.1.4/linux-build. -->
+    <Asset Name="AmdFidelityFxVkLinux"
+           Url="https://github.com/PhoenixTheSage/SE-FRS/releases/download/fidelityfx-vk-1.1.4/libamd_fidelityfx_vk.so"
+           Sha256="cd4a67eb53f41e462adf99c9fbc83727c7d75fee8693a87fe3e90efd9aba0cbb"
+           Placement="Bin" />
+
     <Platforms>Windows,Linux</Platforms>
 
     <!-- Do not list Master or Anomaly here. Anomaly is detected at runtime. -->
